@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Админ панель</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .btn { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #0056b3; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .users-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .users-table th, .users-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .users-table th { background: #f8f9fa; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 15% auto; padding: 20px; border-radius: 8px; width: 400px; }
+        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Админ панель</h1>
+        <div>
+            <button class="btn" onclick="openModal()">Добавить сотрудника</button>
+            <a href="/" class="btn">К чатам</a>
+        </div>
+    </div>
+
+    <table class="users-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Логин</th>
+                <th>Роль</th>
+                <th>Создан</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody id="users-list">
+        </tbody>
+    </table>
+
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Добавить сотрудника</h2>
+            <form id="userForm">
+                <div class="form-group">
+                    <label>Логин:</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Роль:</label>
+                    <select id="role">
+                        <option value="operator">Оператор</option>
+                        <option value="admin">Админ</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Создать</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Проверка доступа
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (!user || user.role !== 'admin') {
+            alert('Доступ запрещен');
+            window.location.href = '/';
+        }
+        
+        let users = [];
+
+        function loadUsers() {
+            fetch('/api/users')
+                .then(res => res.json())
+                .then(data => {
+                    users = data;
+                    renderUsers();
+                });
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('users-list');
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.role === 'admin' ? 'Админ' : 'Оператор'}</td>
+                    <td>${new Date(user.created_at).toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteUser(${user.id})">Удалить</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openModal() {
+            document.getElementById('userModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('userModal').style.display = 'none';
+            document.getElementById('userForm').reset();
+        }
+
+        function deleteUser(id) {
+            if (confirm('Удалить сотрудника?')) {
+                fetch(`/api/users/${id}`, { method: 'DELETE' })
+                    .then(() => loadUsers());
+            }
+        }
+
+        document.getElementById('userForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                role: document.getElementById('role').value
+            };
+
+            fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            }).then(() => {
+                closeModal();
+                loadUsers();
+            });
+        });
+
+        loadUsers();
+    </script>
+</body>
+</html>
