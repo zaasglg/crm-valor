@@ -1,0 +1,125 @@
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Классификатор сообщений</h3>
+      </div>
+      <div class="card-body">
+        <form id="classifyForm">
+          <div class="form-group">
+            <label>Сообщение для анализа:</label>
+            <textarea class="form-control" id="message-text" rows="4" placeholder="Введите текст сообщения клиента..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i> Классифицировать
+          </button>
+        </form>
+        
+        <div id="classification-result" class="mt-4" style="display: none;">
+          <h5>Результат классификации:</h5>
+          <div id="tags-container"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Доступные теги</h3>
+      </div>
+      <div class="card-body">
+        <div class="tag-list">
+          <span class="badge badge-primary m-1">оплата</span>
+          <span class="badge badge-success m-1">доставка</span>
+          <span class="badge badge-danger m-1">жалоба</span>
+          <span class="badge badge-warning m-1">техподдержка</span>
+          <span class="badge badge-info m-1">повторный заказ</span>
+          <span class="badge badge-secondary m-1">информация о товаре</span>
+          <span class="badge badge-dark m-1">отмена заказа</span>
+          <span class="badge badge-light m-1">возврат</span>
+          <span class="badge badge-primary m-1">консультация</span>
+          <span class="badge badge-secondary m-1">общий вопрос</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Примеры сообщений</h3>
+      </div>
+      <div class="card-body">
+        <div class="example-messages">
+          <button class="btn btn-outline-secondary btn-sm btn-block mb-2" onclick="setExample('Сколько стоит доставка?')">
+            Сколько стоит доставка?
+          </button>
+          <button class="btn btn-outline-secondary btn-sm btn-block mb-2" onclick="setExample('Товар пришел сломанный')">
+            Товар пришел сломанный
+          </button>
+          <button class="btn btn-outline-secondary btn-sm btn-block mb-2" onclick="setExample('Не могу войти в личный кабинет')">
+            Не могу войти в личный кабинет
+          </button>
+          <button class="btn btn-outline-secondary btn-sm btn-block mb-2" onclick="setExample('Хочу заказать как в прошлый раз')">
+            Хочу заказать как в прошлый раз
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setExample(text) {
+  document.getElementById('message-text').value = text;
+}
+
+function getTagColor(tag) {
+  const colors = {
+    'оплата': 'primary',
+    'доставка': 'success', 
+    'жалоба': 'danger',
+    'техподдержка': 'warning',
+    'повторный заказ': 'info',
+    'информация о товаре': 'secondary',
+    'отмена заказа': 'dark',
+    'возврат': 'light',
+    'консультация': 'primary',
+    'общий вопрос': 'secondary'
+  };
+  return colors[tag] || 'secondary';
+}
+
+document.getElementById('classifyForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const messageText = document.getElementById('message-text').value.trim();
+  const resultDiv = document.getElementById('classification-result');
+  const tagsContainer = document.getElementById('tags-container');
+  
+  if (!messageText) {
+    alert('Введите текст сообщения');
+    return;
+  }
+  
+  fetch('/api/classify-message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: messageText })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.tags) {
+      tagsContainer.innerHTML = data.tags.map(tag => 
+        `<span class="badge badge-${getTagColor(tag)} mr-2 mb-2" style="font-size: 14px; padding: 8px 12px;">${tag}</span>`
+      ).join('');
+      resultDiv.style.display = 'block';
+    } else {
+      alert('Ошибка классификации');
+    }
+  })
+  .catch(err => {
+    console.error('Error:', err);
+    alert('Ошибка при классификации сообщения');
+  });
+});
+</script>

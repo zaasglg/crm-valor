@@ -1,0 +1,193 @@
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Управление клиентами</h3>
+        <div class="card-tools">
+          <div class="input-group input-group-sm" style="width: 250px;">
+            <input type="text" id="search-input" class="form-control float-right" placeholder="Поиск клиентов...">
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-default">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Имя</th>
+              <th>Канал</th>
+              <th>Назначен</th>
+              <th>Создан</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="clients-list">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="clientModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Информация о клиенте</h4>
+        <button type="button" class="close" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="info-box">
+              <span class="info-box-icon bg-info"><i class="fas fa-user"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Имя клиента</span>
+                <span class="info-box-number" id="modal-client-name">-</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-box">
+              <span class="info-box-icon bg-success"><i class="fas fa-comments"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Канал</span>
+                <span class="info-box-number" id="modal-client-channel">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Назначить оператора:</label>
+          <select class="form-control" id="assign-operator">
+            <option value="">Не назначен</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Комментарий:</label>
+          <textarea class="form-control" id="client-comment" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+        <button type="button" class="btn btn-primary" onclick="saveClientData()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let clients = [];
+let operators = [];
+let currentClientId = null;
+
+function loadClients() {
+  fetch('/api/clients')
+    .then(res => res.json())
+    .then(data => {
+      clients = data;
+      renderClients();
+    });
+}
+
+function loadOperators() {
+  fetch('/api/users')
+    .then(res => res.json())
+    .then(data => {
+      operators = data.filter(u => u.role === 'operator');
+      const select = document.getElementById('assign-operator');
+      select.innerHTML = '<option value="">Не назначен</option>' + 
+        operators.map(op => `<option value="${op.username}">${op.username}</option>`).join('');
+    });
+}
+
+function renderClients() {
+  const tbody = document.getElementById('clients-list');
+  tbody.innerHTML = clients.map(client => `
+    <tr>
+      <td>${client.id}</td>
+      <td>${client.name || 'Неизвестно'}</td>
+      <td><span class="badge badge-primary">${client.channel}</span></td>
+      <td>${client.assigned_to ? `<span class="badge badge-success">${client.assigned_to}</span>` : '<span class="badge badge-secondary">Не назначен</span>'}</td>
+      <td>${new Date(client.created_at).toLocaleString()}</td>
+      <td>
+        <button class="btn btn-info btn-sm" onclick="openClientModal(${client.id})">
+          <i class="fas fa-eye"></i> Просмотр
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openClientModal(clientId) {
+  const client = clients.find(c => c.id === clientId);
+  if (!client) return;
+  
+  currentClientId = clientId;
+  document.getElementById('modal-client-name').textContent = client.name || 'Неизвестно';
+  document.getElementById('modal-client-channel').textContent = client.channel;
+  document.getElementById('assign-operator').value = client.assigned_to || '';
+  document.getElementById('client-comment').value = client.comment || '';
+  
+  $('#clientModal').modal('show');
+}
+
+function saveClientData() {
+  const operator = document.getElementById('assign-operator').value;
+  const comment = document.getElementById('client-comment').value;
+  
+  Promise.all([
+    fetch('/api/assign-client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: currentClientId, operator })
+    }),
+    fetch('/api/update-client-comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: currentClientId, comment })
+    })
+  ]).then(() => {
+    $('#clientModal').modal('hide');
+    loadClients();
+  });
+}
+
+document.getElementById('search-input').addEventListener('input', (e) => {
+  const search = e.target.value.toLowerCase();
+  const filtered = clients.filter(client => 
+    (client.name || '').toLowerCase().includes(search) ||
+    client.channel.toLowerCase().includes(search) ||
+    (client.assigned_to || '').toLowerCase().includes(search)
+  );
+  
+  const tbody = document.getElementById('clients-list');
+  tbody.innerHTML = filtered.map(client => `
+    <tr>
+      <td>${client.id}</td>
+      <td>${client.name || 'Неизвестно'}</td>
+      <td><span class="badge badge-primary">${client.channel}</span></td>
+      <td>${client.assigned_to ? `<span class="badge badge-success">${client.assigned_to}</span>` : '<span class="badge badge-secondary">Не назначен</span>'}</td>
+      <td>${new Date(client.created_at).toLocaleString()}</td>
+      <td>
+        <button class="btn btn-info btn-sm" onclick="openClientModal(${client.id})">
+          <i class="fas fa-eye"></i> Просмотр
+        </button>
+      </td>
+    </tr>
+  `).join('');
+});
+
+loadClients();
+loadOperators();
+</script>

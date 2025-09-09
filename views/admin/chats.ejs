@@ -1,0 +1,124 @@
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Чаты с клиентами</h3>
+        <div class="card-tools">
+          <a href="/" class="btn btn-primary">
+            <i class="fas fa-comments"></i> Открыть интерфейс чатов
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <h5><i class="icon fas fa-info"></i> Информация</h5>
+          Для работы с чатами используйте основной интерфейс системы. Здесь отображается общая статистика по чатам.
+        </div>
+        
+        <div class="row">
+          <div class="col-md-3">
+            <div class="info-box">
+              <span class="info-box-icon bg-info"><i class="fas fa-comments"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Всего чатов</span>
+                <span class="info-box-number" id="total-chats">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box">
+              <span class="info-box-icon bg-success"><i class="fas fa-user-check"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Назначенные</span>
+                <span class="info-box-number" id="assigned-chats">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box">
+              <span class="info-box-icon bg-warning"><i class="fas fa-user-clock"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Ожидают</span>
+                <span class="info-box-number" id="unassigned-chats">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box">
+              <span class="info-box-icon bg-danger"><i class="fas fa-users"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Операторов</span>
+                <span class="info-box-number" id="operators-count">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row mt-4">
+          <div class="col-12">
+            <h5>Активность операторов</h5>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Оператор</th>
+                  <th>Назначенных чатов</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody id="operators-stats">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadChatStats() {
+  try {
+    const [clients, users] = await Promise.all([
+      fetch('/api/clients').then(r => r.json()),
+      fetch('/api/users').then(r => r.json())
+    ]);
+    
+    const operators = users.filter(u => u.role === 'operator');
+    const assignedChats = clients.filter(c => c.assigned_to);
+    const unassignedChats = clients.filter(c => !c.assigned_to);
+    
+    document.getElementById('total-chats').textContent = clients.length;
+    document.getElementById('assigned-chats').textContent = assignedChats.length;
+    document.getElementById('unassigned-chats').textContent = unassignedChats.length;
+    document.getElementById('operators-count').textContent = operators.length;
+    
+    // Статистика по операторам
+    const operatorStats = operators.map(op => {
+      const assignedCount = clients.filter(c => c.assigned_to === op.username).length;
+      return {
+        username: op.username,
+        assignedCount: assignedCount,
+        status: assignedCount > 0 ? 'Активен' : 'Свободен'
+      };
+    });
+    
+    const tbody = document.getElementById('operators-stats');
+    tbody.innerHTML = operatorStats.map(stat => `
+      <tr>
+        <td>${stat.username}</td>
+        <td>${stat.assignedCount}</td>
+        <td>
+          <span class="badge ${stat.status === 'Активен' ? 'badge-success' : 'badge-secondary'}">
+            ${stat.status}
+          </span>
+        </td>
+      </tr>
+    `).join('');
+    
+  } catch (error) {
+    console.error('Error loading chat stats:', error);
+  }
+}
+
+loadChatStats();
+</script>

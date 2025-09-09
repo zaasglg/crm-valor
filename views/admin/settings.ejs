@@ -1,0 +1,163 @@
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Настройки системы</h3>
+      </div>
+      <div class="card-body">
+        <form id="settingsForm">
+          <div class="form-group">
+            <label>Название системы:</label>
+            <input type="text" class="form-control" id="system-name" value="CRM Система">
+          </div>
+          <div class="form-group">
+            <label>Автоназначение чатов:</label>
+            <select class="form-control" id="auto-assign">
+              <option value="false">Отключено</option>
+              <option value="true">Включено</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Максимум чатов на оператора:</label>
+            <input type="number" class="form-control" id="max-chats" value="10" min="1" max="50">
+          </div>
+          <button type="submit" class="btn btn-primary">Сохранить настройки</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Информация о системе</h3>
+      </div>
+      <div class="card-body">
+        <table class="table table-borderless">
+          <tr>
+            <td><strong>Версия:</strong></td>
+            <td>1.0.0</td>
+          </tr>
+          <tr>
+            <td><strong>Статус:</strong></td>
+            <td><span class="badge badge-success">Работает</span></td>
+          </tr>
+          <tr>
+            <td><strong>Uptime:</strong></td>
+            <td id="uptime">-</td>
+          </tr>
+          <tr>
+            <td><strong>База данных:</strong></td>
+            <td><span class="badge badge-info">SQLite</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Действия</h3>
+      </div>
+      <div class="card-body">
+        <button class="btn btn-warning btn-block" onclick="clearLogs()">
+          <i class="fas fa-broom"></i> Очистить логи
+        </button>
+        <button class="btn btn-info btn-block" onclick="exportData()">
+          <i class="fas fa-download"></i> Экспорт данных
+        </button>
+        <button class="btn btn-danger btn-block" onclick="restartSystem()">
+          <i class="fas fa-redo"></i> Перезапуск системы
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function updateUptime() {
+  // Простая имитация uptime
+  const start = new Date('2024-01-01');
+  const now = new Date();
+  const diff = now - start;
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  document.getElementById('uptime').textContent = `${days}д ${hours}ч`;
+}
+
+document.getElementById('settingsForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const settings = {
+    systemName: document.getElementById('system-name').value,
+    autoAssign: document.getElementById('auto-assign').value === 'true',
+    maxChats: parseInt(document.getElementById('max-chats').value)
+  };
+  
+  // Имитация сохранения настроек
+  localStorage.setItem('crm-settings', JSON.stringify(settings));
+  
+  // Показываем уведомление
+  const alert = document.createElement('div');
+  alert.className = 'alert alert-success alert-dismissible fade show';
+  alert.innerHTML = `
+    <i class="fas fa-check"></i> Настройки успешно сохранены
+    <button type="button" class="close" data-dismiss="alert">
+      <span>&times;</span>
+    </button>
+  `;
+  
+  this.insertBefore(alert, this.firstChild);
+  
+  setTimeout(() => {
+    if (alert.parentNode) {
+      alert.parentNode.removeChild(alert);
+    }
+  }, 3000);
+});
+
+function clearLogs() {
+  if (confirm('Очистить все логи системы?')) {
+    // Имитация очистки логов
+    alert('Логи очищены');
+  }
+}
+
+function exportData() {
+  // Имитация экспорта данных
+  const data = {
+    timestamp: new Date().toISOString(),
+    clients: 'exported',
+    messages: 'exported'
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `crm-export-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function restartSystem() {
+  if (confirm('Перезапустить систему? Все активные соединения будут разорваны.')) {
+    alert('Система будет перезапущена через 5 секунд...');
+    // В реальной системе здесь был бы API вызов для перезапуска
+  }
+}
+
+// Загружаем сохраненные настройки
+const savedSettings = JSON.parse(localStorage.getItem('crm-settings') || '{}');
+if (savedSettings.systemName) {
+  document.getElementById('system-name').value = savedSettings.systemName;
+}
+if (savedSettings.autoAssign !== undefined) {
+  document.getElementById('auto-assign').value = savedSettings.autoAssign.toString();
+}
+if (savedSettings.maxChats) {
+  document.getElementById('max-chats').value = savedSettings.maxChats;
+}
+
+updateUptime();
+setInterval(updateUptime, 60000); // Обновляем каждую минуту
+</script>

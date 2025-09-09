@@ -3,31 +3,38 @@
 <head>
     <title>Админ панель</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .btn { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn:hover { background: #0056b3; }
-        .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #c82333; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        .users-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; min-height: 100vh; }
+        .container { background: white; border-radius: 8px; padding: 30px; border: 1px solid #ddd; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #ddd; }
+        .header h1 { color: #333; margin: 0; font-size: 24px; font-weight: 500; }
+        .btn { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; margin-left: 10px; }
+        .btn:hover { opacity: 0.9; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { opacity: 0.9; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #3498db; }
+        .users-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #ddd; }
         .users-table th, .users-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        .users-table th { background: #f8f9fa; }
+        .users-table th { background: #3498db; color: white; font-weight: 500; }
+        .users-table tr:hover { background: #f8f9fa; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; margin: 15% auto; padding: 20px; border-radius: 8px; width: 400px; }
-        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 8px; width: 400px; border: 1px solid #ddd; }
+        .modal-content h2 { margin-top: 0; color: #333; font-size: 24px; }
+        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; color: #999; transition: color 0.3s ease; }
+        .close:hover { color: #333; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Админ панель</h1>
-        <div>
-            <button class="btn" onclick="openModal()">Добавить сотрудника</button>
-            <a href="/" class="btn">К чатам</a>
+    <div class="container">
+        <div class="header">
+            <h1>Админ панель</h1>
+            <div>
+                <button class="btn" onclick="openModal()">Добавить сотрудника</button>
+                <a href="/" class="btn">К чатам</a>
+            </div>
         </div>
-    </div>
 
     <table class="users-table">
         <thead>
@@ -42,6 +49,18 @@
         <tbody id="users-list">
         </tbody>
     </table>
+
+    <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #ddd;">
+        <h2>Рассылка сообщений</h2>
+        <div class="form-group">
+            <label>Сообщение для рассылки:</label>
+            <textarea id="broadcast-message" placeholder="Введите текст сообщения..." style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; box-sizing: border-box;"></textarea>
+        </div>
+        <div style="margin-top: 15px;">
+            <button class="btn" onclick="sendBroadcast()">Отправить всем клиентам</button>
+            <span id="broadcast-status" style="margin-left: 15px; color: #666;"></span>
+        </div>
+    </div>
 
     <div id="userModal" class="modal">
         <div class="modal-content">
@@ -137,6 +156,45 @@
         });
 
         loadUsers();
+        
+        function sendBroadcast() {
+            const message = document.getElementById('broadcast-message').value.trim();
+            const statusEl = document.getElementById('broadcast-status');
+            
+            if (!message) {
+                alert('Введите текст сообщения');
+                return;
+            }
+            
+            if (!confirm('Отправить сообщение всем клиентам?')) {
+                return;
+            }
+            
+            statusEl.textContent = 'Отправка...';
+            statusEl.style.color = '#3498db';
+            
+            fetch('/api/broadcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    statusEl.textContent = `Отправлено ${data.sent} сообщений`;
+                    statusEl.style.color = '#27ae60';
+                    document.getElementById('broadcast-message').value = '';
+                } else {
+                    statusEl.textContent = 'Ошибка: ' + data.error;
+                    statusEl.style.color = '#e74c3c';
+                }
+            })
+            .catch(err => {
+                statusEl.textContent = 'Ошибка отправки';
+                statusEl.style.color = '#e74c3c';
+            });
+        }
     </script>
+    </div>
 </body>
 </html>

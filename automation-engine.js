@@ -1,0 +1,232 @@
+class AutomationEngine {
+  constructor(telegramService = null) {
+    this.rules = [];
+    this.telegramService = telegramService;
+  }
+  
+  setTelegramService(telegramService) {
+    this.telegramService = telegramService;
+  }
+
+  addRule(rule) {
+    if (!rule.id || rule.id === 'auto') {
+      rule.id = Date.now().toString();
+    }
+    this.rules.push(rule);
+    return rule.id;
+  }
+
+  async processEvent(eventType, data) {
+    const matchingRules = this.rules.filter(rule => rule.event === eventType);
+    console.log(`Found ${matchingRules.length} matching rules for event: ${eventType}`);
+    
+    for (const rule of matchingRules) {
+      console.log(`Checking rule: ${rule.name}`);
+      if (this.checkCondition(rule.condition, data)) {
+        console.log(`Rule matched, executing actions...`);
+        await this.executeAction(rule.action, data);
+      } else {
+        console.log(`Rule condition not met`);
+      }
+    }
+  }
+
+  checkCondition(condition, data) {
+    if (!condition) return true;
+
+    for (const [key, value] of Object.entries(condition)) {
+      switch (key) {
+        case 'text_contains':
+          const text = (data.message?.text || '').toLowerCase();
+          const keywords = Array.isArray(value) ? value : [value];
+          if (!keywords.some(keyword => text.includes(keyword.toLowerCase()))) {
+            return false;
+          }
+          break;
+
+        case 'has_tag':
+          const tags = data.tags || [];
+          const requiredTags = Array.isArray(value) ? value : [value];
+          if (!requiredTags.some(tag => tags.includes(tag))) {
+            return false;
+          }
+          break;
+
+        case 'from_channel':
+          const channels = Array.isArray(value) ? value : [value];
+          if (!channels.includes(data.channel)) {
+            return false;
+          }
+          break;
+
+        case 'time_since_last_reply_gt':
+          const timeSince = data.timeSinceLastReply || 0;
+          if (timeSince <= value) {
+            return false;
+          }
+          break;
+
+        case 'file_type':
+          const fileTypes = Array.isArray(value) ? value : [value];
+          if (!data.file || !fileTypes.includes(data.file.type)) {
+            return false;
+          }
+          break;
+      }
+    }
+
+    return true;
+  }
+
+  async executeAction(action, data) {
+    for (const [key, value] of Object.entries(action)) {
+      switch (key) {
+        case 'add_tag':
+          const tagsToAdd = Array.isArray(value) ? value : [value];
+          await this.addTags(data.clientId, tagsToAdd);
+          break;
+
+        case 'remove_tag':
+          const tagsToRemove = Array.isArray(value) ? value : [value];
+          await this.removeTags(data.clientId, tagsToRemove);
+          break;
+
+        case 'auto_reply':
+          await this.sendAutoReply(data.clientId, value);
+          break;
+
+        case 'send_file':
+          await this.sendAutoFile(data.clientId, value);
+          break;
+
+        case 'assign_to_queue':
+          await this.assignToQueue(data.clientId, value);
+          break;
+
+        case 'create_task':
+          await this.createTask(value);
+          break;
+
+        case 'call_outbound_api':
+          await this.callAPI(value);
+          break;
+      }
+    }
+  }
+
+  addTags(clientId, tags) {
+    console.log(`Adding tags ${tags.join(', ')} to client ${clientId}`);
+  }
+
+  removeTags(clientId, tags) {
+    console.log(`Removing tags ${tags.join(', ')} from client ${clientId}`);
+  }
+
+  async sendAutoReply(clientId, message) {
+    console.log(`Sending auto-reply to client ${clientId}: ${message}`);
+    if (this.telegramService) {
+      try {
+        await this.telegramService.sendMessage(clientId, message, 'automation');
+        console.log('Auto-reply sent successfully');
+      } catch (error) {
+        console.error('Error sending auto-reply:', error);
+      }
+    }
+  }
+
+  async sendAutoFile(clientId, fileData) {
+    console.log(`Sending auto-file to client ${clientId}: ${fileData.name}`);
+    if (this.telegramService) {
+      try {
+        await this.telegramService.sendFileByPath(clientId, fileData.path, fileData.name, 'automation');
+        console.log('Auto-file sent successfully');
+      } catch (error) {
+        console.error('Error sending auto-file:', error);
+      }
+    }
+  }
+
+  assignToQueue(clientId, queue) {
+    console.log(`Assigning client ${clientId} to queue ${queue}`);
+  }
+
+  createTask(taskData) {
+    console.log(`Creating task: ${taskData.title}`);
+  }
+
+  callAPI(apiData) {
+    console.log(`Calling API: ${apiData.method} ${apiData.url}`);
+  }
+
+  parseRuleFromText(instruction) {
+    // Простой парсер инструкций - можно расширить
+    const rule = {
+      id: "auto",
+      name: "Автоправило",
+      event: "message_received",
+      condition: {},
+      action: {}
+    };
+
+    const text = instruction.toLowerCase();
+
+    // Определяем событие
+    if (text.includes('получен файл') || text.includes('прислал файл')) {
+      rule.event = 'file_received';
+    } else if (text.includes('открыт чат') || text.includes('начал диалог')) {
+      rule.event = 'chat_opened';
+    } else if (text.includes('закрыт чат') || text.includes('завершен диалог')) {
+      rule.event = 'chat_closed';
+    } else if (text.includes('добавлен тег')) {
+      rule.event = 'tag_added';
+    } else if (text.includes('нет ответа') || text.includes('без ответа')) {
+      rule.event = 'no_reply_timeout';
+    }
+
+    // Определяем условия
+    if (text.includes('содержит') || text.includes('пишет')) {
+      const match = text.match(/["']([^"']+)["']/);
+      if (match) {
+        rule.condition.text_contains = match[1];
+      }
+    }
+
+    if (text.includes('telegram')) rule.condition.from_channel = 'telegram';
+    if (text.includes('whatsapp')) rule.condition.from_channel = 'whatsapp';
+
+    // Определяем действия
+    if (text.includes('ответить') || text.includes('отправить сообщение')) {
+      const match = text.match(/ответить\s+["']([^"']+)["']/i);
+      if (match) {
+        rule.action.auto_reply = match[1];
+      }
+    }
+    
+    if (text.includes('отправить файл')) {
+      const match = text.match(/файл\s+["']([^"']+)["']/i);
+      if (match) {
+        rule.action.send_file = {
+          path: match[1],
+          name: match[1].split('/').pop()
+        };
+      }
+    }
+
+    if (text.includes('добавить тег')) {
+      const match = text.match(/тег\s+["']([^"']+)["']/i);
+      if (match) {
+        rule.action.add_tag = match[1];
+      }
+    }
+
+    if (text.includes('назначить')) {
+      if (text.includes('поддержк')) rule.action.assign_to_queue = 'support';
+      if (text.includes('продаж')) rule.action.assign_to_queue = 'sales';
+      if (text.includes('биллинг')) rule.action.assign_to_queue = 'billing';
+    }
+
+    return rule;
+  }
+}
+
+module.exports = AutomationEngine;

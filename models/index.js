@@ -2,7 +2,12 @@ const { Sequelize, DataTypes } = require('sequelize');
 
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: './chat_clone.db'
+  storage: './chat_clone.db',
+  logging: false,
+  define: {
+    timestamps: true,
+    underscored: false
+  }
 });
 
 const Client = sequelize.define('Client', {
@@ -26,6 +31,14 @@ const Client = sequelize.define('Client', {
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  assigned_to: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  comment: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 });
 

@@ -1,0 +1,150 @@
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Массовая рассылка</h3>
+      </div>
+      <div class="card-body">
+        <form id="broadcastForm">
+          <div class="form-group">
+            <label>Сообщение для рассылки:</label>
+            <textarea class="form-control" id="broadcast-message" rows="6" placeholder="Введите текст сообщения для рассылки всем клиентам..."></textarea>
+          </div>
+          <div class="form-group">
+            <div class="custom-control custom-checkbox">
+              <input class="custom-control-input" type="checkbox" id="confirm-broadcast">
+              <label for="confirm-broadcast" class="custom-control-label">
+                Я подтверждаю отправку сообщения всем клиентам
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-danger btn-lg" disabled id="send-btn">
+            <i class="fas fa-bullhorn"></i> Отправить рассылку
+          </button>
+        </form>
+        
+        <div id="broadcast-status" class="mt-3" style="display: none;">
+          <div class="alert" id="status-alert">
+            <span id="status-text"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Статистика</h3>
+      </div>
+      <div class="card-body">
+        <div class="info-box">
+          <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Всего клиентов</span>
+            <span class="info-box-number" id="total-clients">0</span>
+          </div>
+        </div>
+        
+        <div class="info-box">
+          <span class="info-box-icon bg-success"><i class="fas fa-check"></i></span>
+          <div class="info-box-content">
+            <span class="info-box-text">Активные чаты</span>
+            <span class="info-box-number" id="active-clients">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Предупреждение</h3>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-warning">
+          <h5><i class="icon fas fa-exclamation-triangle"></i> Внимание!</h5>
+          Рассылка будет отправлена всем клиентам в системе. Убедитесь в корректности сообщения перед отправкой.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function loadStats() {
+  fetch('/api/clients')
+    .then(res => res.json())
+    .then(clients => {
+      document.getElementById('total-clients').textContent = clients.length;
+      document.getElementById('active-clients').textContent = clients.filter(c => c.assigned_to).length;
+    });
+}
+
+document.getElementById('confirm-broadcast').addEventListener('change', function() {
+  const sendBtn = document.getElementById('send-btn');
+  const message = document.getElementById('broadcast-message').value.trim();
+  sendBtn.disabled = !this.checked || !message;
+});
+
+document.getElementById('broadcast-message').addEventListener('input', function() {
+  const sendBtn = document.getElementById('send-btn');
+  const checkbox = document.getElementById('confirm-broadcast');
+  sendBtn.disabled = !checkbox.checked || !this.value.trim();
+});
+
+document.getElementById('broadcastForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const message = document.getElementById('broadcast-message').value.trim();
+  const statusDiv = document.getElementById('broadcast-status');
+  const statusAlert = document.getElementById('status-alert');
+  const statusText = document.getElementById('status-text');
+  
+  if (!message) {
+    alert('Введите текст сообщения');
+    return;
+  }
+  
+  if (!confirm('Отправить сообщение всем клиентам? Это действие нельзя отменить.')) {
+    return;
+  }
+  
+  // Показываем статус отправки
+  statusDiv.style.display = 'block';
+  statusAlert.className = 'alert alert-info';
+  statusText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка сообщений...';
+  
+  // Блокируем форму
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('broadcast-message').disabled = true;
+  
+  fetch('/api/broadcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: message })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      statusAlert.className = 'alert alert-success';
+      statusText.innerHTML = `<i class="fas fa-check"></i> Успешно отправлено ${data.sent} из ${data.total} сообщений`;
+      document.getElementById('broadcast-message').value = '';
+      document.getElementById('confirm-broadcast').checked = false;
+    } else {
+      statusAlert.className = 'alert alert-danger';
+      statusText.innerHTML = `<i class="fas fa-times"></i> Ошибка: ${data.error}`;
+    }
+  })
+  .catch(err => {
+    statusAlert.className = 'alert alert-danger';
+    statusText.innerHTML = '<i class="fas fa-times"></i> Ошибка отправки';
+  })
+  .finally(() => {
+    // Разблокируем форму
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('broadcast-message').disabled = false;
+  });
+});
+
+loadStats();
+</script>

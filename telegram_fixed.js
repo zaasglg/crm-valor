@@ -2,23 +2,12 @@ const TelegramBot = require('node-telegram-bot-api');
 const { Client, Message } = require('./models');
 
 class TelegramService {
-  constructor(token, io, automationEngine = null) {
+  constructor(token, io) {
     this.token = token;
     this.io = io;
     this.bot = null;
-    this.automationEngine = automationEngine;
+    this.isPolling = false;
     this.initBot();
-  }
-  
-  async stop() {
-    if (this.bot) {
-      try {
-        await this.bot.stopPolling();
-        console.log('Bot polling stopped');
-      } catch (error) {
-        console.log('Error stopping bot:', error.message);
-      }
-    }
   }
 
   async initBot() {
@@ -26,44 +15,50 @@ class TelegramService {
       // Создаем бота без polling
       this.bot = new TelegramBot(this.token, { polling: false });
       
-      // Очищаем webhook
+      // Удаляем webhook если есть
       await this.bot.deleteWebHook();
-      console.log('Webhook cleared');
+      console.log('Webhook deleted');
       
-      // Используем простой polling с большим интервалом
-      this.bot = new TelegramBot(this.token, { 
-        polling: {
-          interval: 5000,
-          autoStart: false
-        }
-      });
-      
-      // Запускаем через несколько секунд
-      setTimeout(() => {
-        this.bot.startPolling();
-        console.log('Bot polling started with delay');
-      }, 3000);
-      
+      // Настраиваем обработчики
       this.setupHandlers();
-      this.setupErrorHandling();
+      
+      // Запускаем polling только один раз
+      await this.startPollingOnce();
+      
     } catch (error) {
       console.error('Error initializing bot:', error.message);
     }
   }
 
-  setupErrorHandling() {
-    this.bot.on('polling_error', (error) => {
-      if (error.code === 'ETELEGRAM' && error.message.includes('409')) {
-        console.log('Conflict detected - waiting before retry...');
-        // Просто ждем, не перезапускаем
-      } else {
-        console.log('Other polling error:', error.message);
-      }
-    });
-    
-    this.bot.on('error', (error) => {
-      console.log('Bot error:', error.message);
-    });
+  async startPollingOnce() {
+    if (this.isPolling) {
+      console.log('Polling already active');
+      return;
+    }
+
+    try {
+      this.isPolling = true;
+      this.bot.startPolling({ restart: false });
+      console.log('Polling started successfully');
+      
+      // Обработка ошибок polling
+      this.bot.on('polling_error', (error) => {
+        console.log('Polling error:', error.message);
+        this.isPolling = false;
+        
+        // Перезапуск через 10 секунд
+        setTimeout(() => {
+          if (!this.isPolling) {
+            console.log('Restarting polling after error...');
+            this.startPollingOnce();
+          }
+        }, 10000);
+      });
+      
+    } catch (error) {
+      console.error('Error starting polling:', error.message);
+      this.isPolling = false;
+    }
   }
 
   setupHandlers() {
@@ -86,8 +81,6 @@ class TelegramService {
       console.log('=== INCOMING MESSAGE ===');
       console.log('From:', msg.from.id, msg.from.first_name, msg.from.last_name);
       console.log('Text:', msg.text);
-      console.log('Chat ID:', msg.chat.id);
-      console.log('Message ID:', msg.message_id);
       
       const [client, created] = await Client.findOrCreate({
         where: {
@@ -102,23 +95,6 @@ class TelegramService {
       });
 
       console.log('Client found/created:', client.id, client.name, 'Created:', created);
-
-      // Проверяем, нет ли уже такого сообщения
-      const existingMessage = await Message.findOne({
-        where: {
-          client_id: client.id,
-          text: msg.text || '',
-          direction: 'in',
-          created_at: {
-            [require('sequelize').Op.gte]: new Date(Date.now() - 60000) // Последняя минута
-          }
-        }
-      });
-      
-      if (existingMessage) {
-        console.log('Duplicate message detected, skipping');
-        return;
-      }
 
       const message = await Message.create({
         client_id: client.id,
@@ -140,20 +116,8 @@ class TelegramService {
         }
       };
       
-      console.log('Emitting to clients:', JSON.stringify(emitData, null, 2));
+      console.log('Emitting to clients');
       this.io.emit('new_message', emitData);
-      
-      // Запускаем автоматизацию
-      if (this.automationEngine) {
-        console.log('Processing automation rules...');
-        this.automationEngine.processEvent('message_received', {
-          clientId: client.id,
-          message: message,
-          channel: 'telegram',
-          client: client
-        });
-      }
-      
       console.log('=== MESSAGE PROCESSED ===');
     } catch (error) {
       console.error('Error handling incoming message:', error);
@@ -247,29 +211,6 @@ class TelegramService {
       return message;
     } catch (error) {
       console.error('Error sending file:', error);
-      throw error;
-    }
-  }
-
-  async sendFileByPath(clientId, filePath, fileName, operator = 'System') {
-    try {
-      const client = await Client.findByPk(clientId);
-      if (!client) throw new Error('Client not found');
-
-      await this.bot.sendDocument(client.external_id, filePath);
-
-      const message = await Message.create({
-        client_id: clientId,
-        text: `Файл: ${fileName}`,
-        file_url: filePath,
-        file_name: fileName,
-        direction: 'out',
-        operator
-      });
-
-      return message;
-    } catch (error) {
-      console.error('Error sending file by path:', error);
       throw error;
     }
   }

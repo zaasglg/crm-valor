@@ -1,0 +1,349 @@
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Создание правила автоматизации</h3>
+      </div>
+      <div class="card-body">
+        <form id="ruleForm">
+          <div class="form-group">
+            <label>Инструкция:</label>
+            <textarea class="form-control" id="instruction" rows="3" placeholder="Опишите правило простыми словами, например: 'Если клиент пишет привет, ответить Добро пожаловать!'"></textarea>
+          </div>
+          <button type="button" class="btn btn-info" onclick="parseInstruction()">
+            <i class="fas fa-magic"></i> Создать правило из текста
+          </button>
+          <hr>
+          
+          <div class="form-group">
+            <label>Название правила:</label>
+            <input type="text" class="form-control" id="ruleName" placeholder="Краткое описание">
+          </div>
+          
+          <div class="form-group">
+            <label>Событие:</label>
+            <select class="form-control" id="event">
+              <option value="message_received">Получено сообщение</option>
+              <option value="chat_opened">Открыт чат</option>
+              <option value="chat_closed">Закрыт чат</option>
+              <option value="tag_added">Добавлен тег</option>
+              <option value="no_reply_timeout">Нет ответа</option>
+              <option value="file_received">Получен файл</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Условия:</label>
+            <div id="conditions">
+              <div class="condition-item mb-2">
+                <select class="form-control condition-type" style="width: 200px; display: inline-block;">
+                  <option value="">Выберите условие</option>
+                  <option value="text_contains">Текст содержит</option>
+                  <option value="has_tag">Есть тег</option>
+                  <option value="from_channel">Канал</option>
+                  <option value="time_since_last_reply_gt">Время без ответа</option>
+                  <option value="file_type">Тип файла</option>
+                </select>
+                <input type="text" class="form-control condition-value" placeholder="Значение" style="width: 300px; display: inline-block; margin-left: 10px;">
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeCondition(this)">×</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="addCondition()">+ Добавить условие</button>
+          </div>
+          
+          <div class="form-group">
+            <label>Действия:</label>
+            <div id="actions">
+              <div class="action-item mb-2">
+                <select class="form-control action-type" style="width: 200px; display: inline-block;">
+                  <option value="">Выберите действие</option>
+                  <option value="add_tag">Добавить тег</option>
+                  <option value="remove_tag">Убрать тег</option>
+                  <option value="auto_reply">Автоответ</option>
+                  <option value="send_file">Отправить файл</option>
+                  <option value="assign_to_queue">Назначить очередь</option>
+                  <option value="create_task">Создать задачу</option>
+                </select>
+                <input type="text" class="form-control action-value" placeholder="Значение" style="width: 300px; display: inline-block; margin-left: 10px;">
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeAction(this)">×</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="addAction()">+ Добавить действие</button>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Сохранить правило
+          </button>
+        </form>
+        
+        <div id="json-preview" class="mt-4" style="display: none;">
+          <h5>Предпросмотр JSON:</h5>
+          <pre id="json-output" style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-size: 12px;"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Активные правила</h3>
+      </div>
+      <div class="card-body">
+        <div id="rules-list"></div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Примеры инструкций</h3>
+      </div>
+      <div class="card-body">
+        <div class="example-instructions">
+          <button class="btn btn-outline-secondary btn-sm btn-block mb-2" onclick="setInstruction('Если клиент пишет привет, ответить Добро пожаловать в нашу службу поддержки!')">
+            Приветствие
+          </button>
+          <button class="btn btn-outline-secondary btn-sm btn-block mb-2" onclick="setInstruction('Если сообщение содержит оплата, добавить тег billing')">
+            Тег по оплате
+          </button>
+          <button class="btn btn-outline-secondary btn-sm btn-block mb-2" onclick="setInstruction('Если нет ответа 30 минут, создать задачу Проверить клиента')">
+            Задача при молчании
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setInstruction(text) {
+  document.getElementById('instruction').value = text;
+}
+
+function parseInstruction() {
+  const instruction = document.getElementById('instruction').value.trim();
+  if (!instruction) {
+    alert('Введите инструкцию');
+    return;
+  }
+  
+  fetch('/api/parse-rule', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ instruction })
+  })
+  .then(res => res.json())
+  .then(rule => {
+    document.getElementById('ruleName').value = rule.name;
+    document.getElementById('event').value = rule.event;
+    
+    // Заполняем условия
+    const conditionsDiv = document.getElementById('conditions');
+    conditionsDiv.innerHTML = '';
+    for (const [key, value] of Object.entries(rule.condition || {})) {
+      addCondition(key, value);
+    }
+    
+    // Заполняем действия
+    const actionsDiv = document.getElementById('actions');
+    actionsDiv.innerHTML = '';
+    for (const [key, value] of Object.entries(rule.action || {})) {
+      addAction(key, value);
+    }
+    
+    updateJsonPreview();
+  })
+  .catch(err => {
+    console.error('Error:', err);
+    alert('Ошибка при разборе инструкции');
+  });
+}
+
+function addCondition(type = '', value = '') {
+  const div = document.createElement('div');
+  div.className = 'condition-item mb-2';
+  div.innerHTML = `
+    <select class="form-control condition-type" style="width: 200px; display: inline-block;" onchange="updateJsonPreview()">
+      <option value="">Выберите условие</option>
+      <option value="text_contains" ${type === 'text_contains' ? 'selected' : ''}>Текст содержит</option>
+      <option value="has_tag" ${type === 'has_tag' ? 'selected' : ''}>Есть тег</option>
+      <option value="from_channel" ${type === 'from_channel' ? 'selected' : ''}>Канал</option>
+      <option value="time_since_last_reply_gt" ${type === 'time_since_last_reply_gt' ? 'selected' : ''}>Время без ответа</option>
+      <option value="file_type" ${type === 'file_type' ? 'selected' : ''}>Тип файла</option>
+    </select>
+    <input type="text" class="form-control condition-value" placeholder="Значение" value="${value}" style="width: 300px; display: inline-block; margin-left: 10px;" oninput="updateJsonPreview()">
+    <button type="button" class="btn btn-sm btn-danger" onclick="removeCondition(this)">×</button>
+  `;
+  document.getElementById('conditions').appendChild(div);
+}
+
+function addAction(type = '', value = '') {
+  const div = document.createElement('div');
+  div.className = 'action-item mb-2';
+  div.innerHTML = `
+    <select class="form-control action-type" style="width: 200px; display: inline-block;" onchange="updateJsonPreview()">
+      <option value="">Выберите действие</option>
+      <option value="add_tag" ${type === 'add_tag' ? 'selected' : ''}>Добавить тег</option>
+      <option value="remove_tag" ${type === 'remove_tag' ? 'selected' : ''}>Убрать тег</option>
+      <option value="auto_reply" ${type === 'auto_reply' ? 'selected' : ''}>Автоответ</option>
+      <option value="send_file" ${type === 'send_file' ? 'selected' : ''}>Отправить файл</option>
+      <option value="assign_to_queue" ${type === 'assign_to_queue' ? 'selected' : ''}>Назначить очередь</option>
+      <option value="create_task" ${type === 'create_task' ? 'selected' : ''}>Создать задачу</option>
+    </select>
+    <div style="display: inline-block; margin-left: 10px;">
+      <input type="text" class="form-control action-value" placeholder="Значение" value="${typeof value === 'object' ? value.name || '' : value}" style="width: 200px; display: inline-block;" oninput="updateJsonPreview()">
+      <input type="file" class="form-control action-file" style="width: 100px; display: none; margin-left: 5px;" onchange="uploadActionFile(this)">
+      <button type="button" class="btn btn-sm btn-info" onclick="toggleFileUpload(this)" style="margin-left: 5px;">📁</button>
+    </div>
+    <button type="button" class="btn btn-sm btn-danger" onclick="removeAction(this)">×</button>
+  `;
+  document.getElementById('actions').appendChild(div);
+}
+
+function removeCondition(btn) {
+  btn.parentElement.remove();
+  updateJsonPreview();
+}
+
+function removeAction(btn) {
+  btn.parentElement.remove();
+  updateJsonPreview();
+}
+
+function updateJsonPreview() {
+  const rule = buildRuleFromForm();
+  document.getElementById('json-output').textContent = JSON.stringify(rule, null, 2);
+  document.getElementById('json-preview').style.display = 'block';
+}
+
+function buildRuleFromForm() {
+  const rule = {
+    id: "auto",
+    name: document.getElementById('ruleName').value || "Новое правило",
+    event: document.getElementById('event').value,
+    condition: {},
+    action: {}
+  };
+  
+  // Собираем условия
+  document.querySelectorAll('.condition-item').forEach(item => {
+    const type = item.querySelector('.condition-type').value;
+    const value = item.querySelector('.condition-value').value;
+    if (type && value) {
+      rule.condition[type] = value;
+    }
+  });
+  
+  // Собираем действия
+  document.querySelectorAll('.action-item').forEach(item => {
+    const type = item.querySelector('.action-type').value;
+    const valueInput = item.querySelector('.action-value');
+    const value = valueInput.value;
+    
+    if (type && value) {
+      if (type === 'send_file' && valueInput.dataset.filePath) {
+        rule.action[type] = {
+          name: value,
+          path: valueInput.dataset.filePath
+        };
+      } else {
+        rule.action[type] = value;
+      }
+    }
+  });
+  
+  return rule;
+}
+
+document.getElementById('ruleForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const rule = buildRuleFromForm();
+  
+  fetch('/api/automation-rules', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(rule)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('Правило сохранено');
+      loadRules();
+      document.getElementById('ruleForm').reset();
+      document.getElementById('json-preview').style.display = 'none';
+    } else {
+      alert('Ошибка при сохранении правила');
+    }
+  });
+});
+
+function loadRules() {
+  fetch('/api/automation-rules')
+    .then(res => res.json())
+    .then(rules => {
+      const container = document.getElementById('rules-list');
+      container.innerHTML = rules.map(rule => `
+        <div class="rule-item mb-2 p-2" style="border: 1px solid #dee2e6; border-radius: 4px;">
+          <strong>${rule.name}</strong><br>
+          <small class="text-muted">${rule.event}</small>
+          <button class="btn btn-sm btn-danger float-right" onclick="deleteRule('${rule.id}')">×</button>
+        </div>
+      `).join('');
+    });
+}
+
+function deleteRule(id) {
+  if (confirm('Удалить правило?')) {
+    fetch(`/api/automation-rules/${id}`, { method: 'DELETE' })
+      .then(() => loadRules());
+  }
+}
+
+// Обновляем JSON при изменении формы
+document.getElementById('ruleName').addEventListener('input', updateJsonPreview);
+document.getElementById('event').addEventListener('change', updateJsonPreview);
+
+function toggleFileUpload(btn) {
+  const actionItem = btn.closest('.action-item');
+  const select = actionItem.querySelector('.action-type');
+  const fileInput = actionItem.querySelector('.action-file');
+  
+  if (select.value === 'send_file') {
+    fileInput.style.display = fileInput.style.display === 'none' ? 'inline-block' : 'none';
+  } else {
+    alert('Выберите "Отправить файл" в действии');
+  }
+}
+
+function uploadActionFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  fetch('/api/upload-automation-file', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      const actionItem = input.closest('.action-item');
+      const valueInput = actionItem.querySelector('.action-value');
+      valueInput.value = data.fileName;
+      valueInput.dataset.filePath = data.filePath;
+      updateJsonPreview();
+    } else {
+      alert('Ошибка загрузки файла');
+    }
+  })
+  .catch(err => {
+    console.error('Error:', err);
+    alert('Ошибка загрузки файла');
+  });
+}
+
+loadRules();
+</script>

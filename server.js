@@ -4,8 +4,11 @@ const http = require('http');
 const socketIo = require('socket.io');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { sequelize, Client, Message, User } = require('./models');
 const TelegramService = require('./telegram');
+const MessageClassifier = require('./message-classifier');
+const AutomationEngine = require('./automation-engine');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,13 +29,25 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 let telegramService;
+const messageClassifier = new MessageClassifier();
+const automationEngine = new AutomationEngine();
+let automationRules = [];
 
 // Routes
 app.get('/login', (req, res) => {
   res.render('login');
 });
 
+app.get('/logout', (req, res) => {
+  res.redirect('/login');
+});
+
 app.get('/', (req, res) => {
+  res.render('chat');
+});
+
+// Старый интерфейс чатов для совместимости
+app.get('/old-chat', (req, res) => {
   res.render('index');
 });
 
@@ -54,8 +69,101 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Перенаправление на новый дашборд
 app.get('/admin', (req, res) => {
+  res.redirect('/admin/dashboard');
+});
+
+// Старая админка (оставляем для совместимости)
+app.get('/admin/old', (req, res) => {
   res.render('admin');
+});
+
+// Новые AdminLTE маршруты
+app.get('/admin/dashboard', (req, res) => {
+  res.render('layout', {
+    title: 'Дашборд - CRM',
+    page: 'dashboard',
+    pageTitle: 'Дашборд',
+    body: require('fs').readFileSync(path.join(__dirname, 'views/admin/dashboard.ejs'), 'utf8')
+  });
+});
+
+app.get('/admin/users', (req, res) => {
+  res.render('layout', {
+    title: 'Сотрудники - CRM',
+    page: 'users',
+    pageTitle: 'Управление сотрудниками',
+    body: require('fs').readFileSync(path.join(__dirname, 'views/admin/users.ejs'), 'utf8')
+  });
+});
+
+app.get('/admin/clients', (req, res) => {
+  res.render('layout', {
+    title: 'Клиенты - CRM',
+    page: 'clients',
+    pageTitle: 'Управление клиентами',
+    body: require('fs').readFileSync(path.join(__dirname, 'views/admin/clients.ejs'), 'utf8')
+  });
+});
+
+app.get('/admin/broadcast', (req, res) => {
+  res.render('layout', {
+    title: 'Рассылка - CRM',
+    page: 'broadcast',
+    pageTitle: 'Массовая рассылка',
+    body: require('fs').readFileSync(path.join(__dirname, 'views/admin/broadcast.ejs'), 'utf8')
+  });
+});
+
+app.get('/admin/chats', (req, res) => {
+  res.render('layout', {
+    title: 'Чаты - CRM',
+    page: 'chats',
+    pageTitle: 'Статистика чатов',
+    body: require('fs').readFileSync(path.join(__dirname, 'views/admin/chats.ejs'), 'utf8')
+  });
+});
+
+app.get('/admin/settings', (req, res) => {
+  res.render('layout', {
+    title: 'Настройки - CRM',
+    page: 'settings',
+    pageTitle: 'Настройки системы',
+    body: require('fs').readFileSync(path.join(__dirname, 'views/admin/settings.ejs'), 'utf8')
+  });
+});
+
+app.get('/admin/classifier', (req, res) => {
+  res.render('layout', {
+    title: 'Классификатор - CRM',
+    page: 'classifier',
+    pageTitle: 'Классификатор сообщений',
+    body: require('fs').readFileSync(path.join(__dirname, 'views/admin/classifier.ejs'), 'utf8')
+  });
+});
+
+app.get('/admin/automation', (req, res) => {
+  res.render('layout', {
+    title: 'Автоматизация - CRM',
+    page: 'automation',
+    pageTitle: 'Правила автоматизации',
+    body: require('fs').readFileSync(path.join(__dirname, 'views/admin/automation.ejs'), 'utf8')
+  });
+});
+
+app.get('/user-card', (req, res) => {
+  res.render('user_card');
+});
+
+app.get('/user-card-fragment', (req, res) => {
+  fs.readFile(path.join(__dirname, 'views', 'user_card.ejs'), 'utf8', (err, data) => {
+    if (err) {
+      res.status(500).send('Error loading user card');
+    } else {
+      res.send(data);
+    }
+  });
 });
 
 app.get('/api/users', async (req, res) => {
@@ -98,6 +206,26 @@ app.post('/api/assign-client', async (req, res) => {
   }
 });
 
+app.post('/api/update-client-comment', async (req, res) => {
+  try {
+    const { client_id, comment } = req.body;
+    await Client.update({ comment: comment }, { where: { id: client_id } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/update-client-cluster', async (req, res) => {
+  try {
+    const { client_id, cluster } = req.body;
+    await Client.update({ cluster: cluster }, { where: { id: client_id } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/clients', async (req, res) => {
   try {
     const clients = await Client.findAll({
@@ -107,10 +235,33 @@ app.get('/api/clients', async (req, res) => {
       id: client.id,
       name: client.name,
       channel: client.channel,
+      external_id: client.external_id,
       assigned_to: client.assigned_to,
+      comment: client.comment,
+      created_at: client.created_at,
       messages: []
     }));
     res.json(clientsWithMessages);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/clients/:id', async (req, res) => {
+  try {
+    const client = await Client.findByPk(req.params.id);
+    if (!client) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+    res.json({
+      id: client.id,
+      name: client.name,
+      channel: client.channel,
+      external_id: client.external_id,
+      assigned_to: client.assigned_to,
+      comment: client.comment,
+      created_at: client.created_at
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -180,6 +331,104 @@ app.post('/api/send-file', upload.single('file'), async (req, res) => {
   }
 });
 
+app.post('/api/broadcast', async (req, res) => {
+  try {
+    const { message } = req.body;
+    
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+    
+    if (!telegramService) {
+      return res.status(500).json({ error: 'Telegram service not initialized' });
+    }
+    
+    const clients = await Client.findAll();
+    let sentCount = 0;
+    
+    for (const client of clients) {
+      try {
+        await telegramService.sendMessage(client.id, message, 'admin');
+        sentCount++;
+      } catch (error) {
+        console.error(`Failed to send message to client ${client.id}:`, error);
+      }
+    }
+    
+    res.json({ success: true, sent: sentCount, total: clients.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/classify-message', (req, res) => {
+  try {
+    const { message } = req.body;
+    
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+    
+    const result = messageClassifier.classify(message);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/parse-rule', (req, res) => {
+  try {
+    const { instruction } = req.body;
+    const rule = automationEngine.parseRuleFromText(instruction);
+    res.json(rule);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/automation-rules', (req, res) => {
+  res.json(automationRules);
+});
+
+app.post('/api/automation-rules', (req, res) => {
+  try {
+    const rule = req.body;
+    const id = automationEngine.addRule(rule);
+    automationRules.push({ ...rule, id });
+    res.json({ success: true, id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/automation-rules/:id', (req, res) => {
+  try {
+    const id = req.params.id;
+    automationRules = automationRules.filter(rule => rule.id !== id);
+    automationEngine.rules = automationEngine.rules.filter(rule => rule.id !== id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/upload-automation-file', upload.single('file'), (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    res.json({ 
+      success: true, 
+      filePath: `/uploads/${file.filename}`,
+      fileName: file.originalname
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Socket.IO
 io.on('connection', (socket) => {
   console.log('Client connected');
@@ -195,7 +444,7 @@ async function init() {
     await sequelize.authenticate();
     console.log('Database connected');
     
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ force: false });
     console.log('Database synced');
     
     // Создаем админа по умолчанию
@@ -210,8 +459,10 @@ async function init() {
     }
     
     if (process.env.TELEGRAM_BOT_TOKEN) {
-      telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN, io);
+      telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN, io, automationEngine);
+      automationEngine.setTelegramService(telegramService);
       console.log('Telegram bot initialized');
+      console.log('Automation engine linked to telegram service');
     } else {
       console.warn('TELEGRAM_BOT_TOKEN not provided');
     }
@@ -227,3 +478,20 @@ async function init() {
 }
 
 init();
+
+// Корректное завершение процесса
+process.on('SIGINT', async () => {
+  console.log('Shutting down server...');
+  if (telegramService) {
+    await telegramService.stop();
+  }
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('Shutting down server...');
+  if (telegramService) {
+    await telegramService.stop();
+  }
+  process.exit(0);
+});

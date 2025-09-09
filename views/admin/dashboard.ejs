@@ -1,0 +1,109 @@
+<div class="row">
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-info">
+      <div class="inner">
+        <h3 id="total-clients">0</h3>
+        <p>Всего клиентов</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-users"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-success">
+      <div class="inner">
+        <h3 id="active-chats">0</h3>
+        <p>Активные чаты</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-comments"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-warning">
+      <div class="inner">
+        <h3 id="total-messages">0</h3>
+        <p>Сообщений сегодня</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-envelope"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-danger">
+      <div class="inner">
+        <h3 id="operators-count">0</h3>
+        <p>Операторов</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-user-tie"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Последние сообщения</h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Клиент</th>
+                <th>Сообщение</th>
+                <th>Время</th>
+                <th>Оператор</th>
+              </tr>
+            </thead>
+            <tbody id="recent-messages">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Быстрые действия</h3>
+      </div>
+      <div class="card-body">
+        <a href="/admin/broadcast" class="btn btn-primary btn-block">
+          <i class="fas fa-bullhorn"></i> Рассылка
+        </a>
+        <a href="/admin/users" class="btn btn-success btn-block">
+          <i class="fas fa-user-plus"></i> Добавить сотрудника
+        </a>
+        <a href="/" class="btn btn-info btn-block">
+          <i class="fas fa-comments"></i> Открыть чаты
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadDashboardData() {
+  try {
+    const [clients, users] = await Promise.all([
+      fetch('/api/clients').then(r => r.json()),
+      fetch('/api/users').then(r => r.json())
+    ]);
+
+    document.getElementById('total-clients').textContent = clients.length;
+    document.getElementById('operators-count').textContent = users.filter(u => u.role === 'operator').length;
+    document.getElementById('active-chats').textContent = clients.filter(c => c.assigned_to).length;
+  } catch (error) {
+    console.error('Error loading dashboard data:', error);
+  }
+}
+
+loadDashboardData();
+</script>

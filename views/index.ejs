@@ -3,29 +3,73 @@
 <head>
     <title>Chat Clone</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; }
-        .sidebar { width: 300px; background: #f5f5f5; border-right: 1px solid #ddd; overflow-y: auto; flex-shrink: 0; }
-        .client-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .client-item:hover { background: #e9e9e9; }
-        .client-item.active { background: #007bff; color: white; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; width: 100%; min-width: 0; }
-        .messages { flex: 1; padding: 20px; overflow-y: auto; background: #fff; height: 100%; width: 100%; box-sizing: border-box; }
-        .message { margin: 10px 0; padding: 10px; border-radius: 8px; max-width: 70%; }
-        .message.in { background: #f1f1f1; align-self: flex-start; }
-        .message.out { background: #007bff; color: white; align-self: flex-end; margin-left: auto; }
-        .input-area { padding: 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; width: 100%; box-sizing: border-box; }
-        .input-area input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; }
-        .input-area button, .input-area a.btn { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px; text-decoration: none; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; height: 100vh; background: #f5f5f5; }
+        .sidebar { width: 300px; background: #2c3e50; border-right: none; overflow-y: auto; flex-shrink: 0; }
+        .client-item { padding: 15px; border-bottom: 1px solid #3c4f66; cursor: pointer; color: white; }
+        .client-item:hover { background: #34495e; }
+        .client-item.active { background: #3498db; }
+        .client-item strong { font-size: 14px; display: block; margin-bottom: 4px; }
+        .client-item > div:nth-child(2) { font-size: 12px; opacity: 0.8; margin-bottom: 8px; }
+        .client-item small { font-size: 11px; opacity: 0.7; display: block; margin-bottom: 8px; }
+        .chat-area { flex: 1; display: flex; flex-direction: column; width: 100%; min-width: 0; background: white; }
+        .chat-header { padding: 15px 20px; background: white; border-bottom: 1px solid #ddd; cursor: pointer; display: none; }
+        .chat-header:hover { background: #f8f9fa; }
+        .chat-header-info { display: flex; align-items: center; gap: 12px; }
+        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: #00a884; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px; }
+        .chat-user-details h3 { margin: 0; font-size: 16px; color: #111b21; font-weight: 500; }
+        .chat-user-details p { margin: 2px 0 0 0; font-size: 13px; color: #667781; }
+        .online-indicator { width: 8px; height: 8px; background: #00a884; border-radius: 50%; margin-left: auto; }
+        
+        /* Модальное окно карточки пользователя */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1000; }
+        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { background: #3498db; color: white; padding: 20px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; }
+        .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+        .modal-close:hover { opacity: 0.8; }
+        .modal-body { padding: 20px !important; }
+        .user-profile { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .user-avatar-large { width: 50px; height: 50px; border-radius: 50%; background: #3498db; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: 500; }
+        .user-info-modal h2 { margin: 0; font-size: 20px; color: #111b21; }
+        .user-info-modal p { margin: 5px 0 0 0; color: #667781; font-size: 14px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+        .stat-item { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 4px; border: 1px solid #ddd; }
+        .stat-number { font-size: 20px; font-weight: 500; color: #3498db; }
+        .stat-label { font-size: 12px; color: #667781; margin-top: 5px; }
+        .info-section { margin: 20px 0; }
+        .info-section h3 { margin: 0 0 15px 0; font-size: 16px; color: #111b21; }
+        .info-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f2f5; }
+        .info-item:last-child { border-bottom: none; }
+        .info-item-label { color: #667781; font-size: 14px; }
+        .info-item-value { color: #111b21; font-size: 14px; font-weight: 500; }
+        .recent-messages { max-height: 200px; overflow-y: auto; }
+        .message-preview { padding: 10px; background: #f0f2f5; border-radius: 8px; margin: 8px 0; font-size: 13px; }
+        .message-preview-meta { color: #667781; font-size: 11px; margin-bottom: 3px; }
+        .message-preview-text { color: #111b21; }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; background: #f5f5f5; height: 100%; width: 100%; box-sizing: border-box; }
+        .message { margin: 10px 0; padding: 12px 16px; border-radius: 8px; max-width: 70%; }
+        .message.in { background: white; align-self: flex-start; border: 1px solid #ddd; }
+        .message.out { background: #3498db; color: white; align-self: flex-end; margin-left: auto; }
+        .input-area { padding: 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; width: 100%; box-sizing: border-box; background: white; }
+        .input-area input { flex: 1; padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box; font-size: 14px; }
+        .input-area input:focus { outline: none; border-color: #3498db; }
+        .input-area button, .input-area a.btn { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px; text-decoration: none; }
+        .input-area button:hover, .input-area a.btn:hover { opacity: 0.9; }
         .input-area select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px; }
         .file-message { background: #e8f4fd; border: 1px solid #bee5eb; padding: 10px; border-radius: 8px; margin: 5px 0; }
         .file-link { color: #007bff; text-decoration: none; }
         .file-link:hover { text-decoration: underline; }
-        .no-client { display: flex; align-items: center; justify-content: center; height: 100%; color: #666; }
-        .header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
-        .header .user-info { display: flex; flex-direction: column; gap: 8px; }
-        .header .btn { padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; }
-        .header .btn-danger { background: #dc3545; }
-        .header .btn:hover { opacity: 0.8; }
+        .no-client { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 18px; font-weight: 500; }
+        .header { padding: 20px; background: #34495e; border-bottom: 1px solid #3c4f66; }
+        .header .user-info { display: flex; flex-direction: column; gap: 12px; }
+        .user-profile-section { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+        .user-avatar-sidebar { width: 40px; height: 40px; border-radius: 50%; background: #3498db; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; font-weight: 500; }
+        .user-details { flex: 1; }
+        .user-name { color: white; font-size: 14px; font-weight: 500; margin: 0; }
+        .user-role { color: #bdc3c7; font-size: 12px; margin: 2px 0 0 0; }
+        .header .btn { padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 12px; font-weight: 400; }
+        .header .btn-danger { background: #e74c3c; }
+        .header .btn:hover { opacity: 0.9; }
+        .buttons-section { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
@@ -33,14 +77,32 @@
         <div class="sidebar">
             <div class="header">
                 <div class="user-info">
-                    <span id="username-display"></span>
-                    <a href="/admin" class="btn" id="admin-btn" style="display: none;">Админ</a>
-                    <button onclick="logout()" class="btn btn-danger">Выход</button>
+                    <div class="user-profile-section">
+                        <div class="user-avatar-sidebar" id="user-avatar-sidebar">U</div>
+                        <div class="user-details">
+                            <h3 class="user-name" id="username-display"></h3>
+                            <p class="user-role" id="user-role-display"></p>
+                        </div>
+                    </div>
+                    <div class="buttons-section">
+                        <a href="/admin" class="btn" id="admin-btn" style="display: none;">Админ</a>
+                        <button onclick="logout()" class="btn btn-danger">Выход</button>
+                    </div>
                 </div>
             </div>
             <div id="clients-list"></div>
         </div>
         <div class="chat-area">
+            <div class="chat-header" id="chat-header" onclick="openUserCard()">
+                <div class="chat-header-info">
+                    <div class="chat-avatar" id="chat-avatar">U</div>
+                    <div class="chat-user-details">
+                        <h3 id="chat-user-name">Выберите пользователя</h3>
+                        <p id="chat-user-status">Telegram</p>
+                    </div>
+                    <div class="online-indicator" id="online-indicator" style="display: none;"></div>
+                </div>
+            </div>
             <div id="messages" class="messages"></div>
             <div class="input-area">
 
@@ -49,6 +111,19 @@
             <button onclick="document.getElementById('file-input').click()" id="file-btn" disabled>📁</button>
             <button onclick="sendMessage()" id="send-btn" disabled>Отправить</button>
         </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно карточки пользователя -->
+    <div class="modal-overlay" id="user-card-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Карточка пользователя</h2>
+                <button class="modal-close" onclick="closeUserCardModal()">&times;</button>
+            </div>
+            <div id="modal-body" style="padding: 20px;">
+                
+            </div>
         </div>
     </div>
 
@@ -61,7 +136,13 @@
         }
         
         // Отображение текущего пользователя
-        document.getElementById('username-display').textContent = user.username + ' (' + (user.role === 'admin' ? 'Админ' : 'Оператор') + ')';
+        document.getElementById('username-display').textContent = user.username;
+        document.getElementById('user-role-display').textContent = user.role === 'admin' ? 'Администратор' : 'Оператор';
+        
+        // Устанавливаем аватар пользователя
+        const userAvatar = document.getElementById('user-avatar-sidebar');
+        const userFirstLetter = user.username.charAt(0).toUpperCase();
+        userAvatar.textContent = userFirstLetter;
         
         // Показываем кнопку админки только для админов
         if (user.role === 'admin') {
@@ -110,6 +191,29 @@
             document.getElementById('send-btn').disabled = false;
             document.getElementById('file-input').disabled = false;
             document.getElementById('file-btn').disabled = false;
+            
+            // Обновляем шапку чата
+            const client = clients[clientId];
+            if (client) {
+                document.getElementById('chat-header').style.display = 'block';
+                document.getElementById('chat-user-name').textContent = client.name || 'Неизвестный пользователь';
+                
+                // Показываем статус и назначение
+                let statusText = 'Telegram';
+                if (client.assigned_to) {
+                    statusText += ` • Назначен: ${client.assigned_to}`;
+                }
+                document.getElementById('chat-user-status').textContent = statusText;
+                
+                // Обновляем аватар
+                const avatar = document.getElementById('chat-avatar');
+                const firstLetter = (client.name || 'U').charAt(0).toUpperCase();
+                avatar.textContent = firstLetter;
+                
+                // Показываем онлайн индикатор (симуляция)
+                document.getElementById('online-indicator').style.display = 'block';
+            }
+            
             loadMessages(clientId);
         }
 
@@ -134,6 +238,7 @@
             const container = document.getElementById('messages');
             if (!currentClientId) {
                 container.innerHTML = '<div class="no-client">Выберите клиента для начала чата</div>';
+                document.getElementById('chat-header').style.display = 'none';
                 return;
             }
             const messages = clients[currentClientId]?.messages || [];
@@ -161,7 +266,7 @@
                     <strong>${client.name}</strong>
                     <div>Telegram</div>
                     ${client.assigned_to ? `<small>Назначен: ${client.assigned_to}</small>` : ''}
-                    ${user.role === 'admin' ? `<button onclick="assignClient(${client.id})" style="margin-top: 5px; padding: 2px 8px; font-size: 12px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">Назначить</button>` : ''}
+
                 </div>`
             ).join('');
         }
@@ -205,6 +310,119 @@
 
 
 
+        function openUserCard() {
+            if (currentClientId) {
+                openUserCardModal(currentClientId);
+            }
+        }
+        
+        function openUserCardModal(clientId) {
+            const modal = document.getElementById('user-card-modal');
+            const modalBody = document.getElementById('modal-body');
+            
+            // Загружаем содержимое модала
+            fetch('/user-card-fragment')
+                .then(res => res.text())
+                .then(html => {
+                    modalBody.innerHTML = html;
+                    
+                    // Загружаем данные клиента
+                    fetch(`/api/clients`)
+                        .then(res => res.json())
+                        .then(clients => {
+                            const client = clients.find(c => c.id == clientId);
+                            if (client) {
+                                document.getElementById('modal-user-name').textContent = client.name || 'Неизвестный пользователь';
+                                document.getElementById('modal-user-id').textContent = client.id;
+                                document.getElementById('modal-external-id').textContent = client.external_id;
+                                document.getElementById('modal-assigned-to').textContent = client.assigned_to || 'Не назначен';
+                                document.getElementById('modal-created-at').textContent = new Date(client.created_at).toLocaleString();
+                                
+                                // Загружаем комментарий
+                                document.getElementById('modal-user-comment').value = client.comment || '';
+                                
+                                // Устанавливаем аватар
+                                const avatar = document.getElementById('modal-user-avatar');
+                                const firstLetter = (client.name || 'U').charAt(0).toUpperCase();
+                                avatar.textContent = firstLetter;
+                            }
+                        });
+                    
+                    // Загружаем статистику сообщений
+                    fetch(`/api/messages/${clientId}`)
+                        .then(res => res.json())
+                        .then(messages => {
+                            if (!Array.isArray(messages)) {
+                                messages = [];
+                            }
+                            
+                            // Обновляем статистику
+                            const totalMessages = messages.length;
+                            const incomingMessages = messages.filter(m => m.direction === 'in').length;
+                            const outgoingMessages = messages.filter(m => m.direction === 'out').length;
+                            
+                            document.getElementById('modal-total-messages').textContent = totalMessages;
+                            document.getElementById('modal-incoming-messages').textContent = incomingMessages;
+                            document.getElementById('modal-outgoing-messages').textContent = outgoingMessages;
+                        });
+                    
+                    // Показываем модал
+                    modal.style.display = 'block';
+                });
+        }
+        
+        function closeUserCardModal() {
+            const modal = document.getElementById('user-card-modal');
+            modal.style.display = 'none';
+        }
+        
+        function saveComment() {
+            const commentTextarea = document.getElementById('modal-user-comment');
+            const comment = commentTextarea.value.trim();
+            const clientId = currentClientId; // Используем текущего клиента
+            
+            if (!clientId) {
+                alert('Клиент не выбран');
+                return;
+            }
+            
+            fetch('/api/update-client-comment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client_id: clientId, comment: comment })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Комментарий сохранен');
+                    // Обновляем комментарий в локальном объекте клиентов
+                    if (clients[clientId]) {
+                        clients[clientId].comment = comment;
+                    }
+                } else {
+                    alert('Ошибка при сохранении комментария');
+                }
+            })
+            .catch(err => {
+                console.error('Error saving comment:', err);
+                alert('Ошибка при сохранении комментария');
+            });
+        }
+        
+        // Закрытие модала при клике на overlay
+        document.getElementById('user-card-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'user-card-modal') {
+                closeUserCardModal();
+            }
+        });
+        
+        // Закрытие модала при нажатии Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeUserCardModal();
+            }
+        });
+        
         function assignClient(clientId) {
             fetch('/api/users')
                 .then(res => res.json())
@@ -220,8 +438,8 @@
                         <div style="background: white; padding: 20px; border-radius: 8px; min-width: 300px;">
                             <h3>Назначить оператора</h3>
                             <div style="margin: 15px 0;">${select.outerHTML}</div>
-                            <button onclick="confirmAssign()" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; margin-right: 10px; cursor: pointer;">Назначить</button>
-                            <button onclick="closeAssignModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Отмена</button>
+                            <button onclick="confirmAssign()" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 25px; margin-right: 10px; cursor: pointer; font-weight: 500; transition: all 0.3s ease;">✓ Назначить</button>
+                            <button onclick="closeAssignModal()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: 500; transition: all 0.3s ease;">✖ Отмена</button>
                         </div>
                     `;
                     
