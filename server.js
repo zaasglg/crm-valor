@@ -444,6 +444,32 @@ async function init() {
     await sequelize.authenticate();
     console.log('Database connected');
     
+    // Безопасная синхронизация с резервным копированием
+    try {
+      // Проверяем существование таблицы Clients
+      const [tables] = await sequelize.query("SELECT name FROM sqlite_master WHERE type='table' AND name='Clients';");
+      
+      if (tables.length > 0) {
+        // Создаем резервную копию только если таблица существует и не пустая
+        const [clientCount] = await sequelize.query('SELECT COUNT(*) as count FROM `Clients`;');
+        
+        if (clientCount[0].count > 0) {
+          // Удаляем старую резервную копию
+          await sequelize.query('DROP TABLE IF EXISTS `Clients_backup`;');
+          
+          // Создаем новую резервную копию
+          await sequelize.query(`
+            CREATE TABLE \`Clients_backup\` AS 
+            SELECT * FROM \`Clients\` WHERE \`id\` IS NOT NULL;
+          `);
+          
+          console.log(`Backup created with ${clientCount[0].count} records`);
+        }
+      }
+    } catch (backupError) {
+      console.warn('Backup creation failed:', backupError.message);
+    }
+    
     await sequelize.sync({ force: false });
     console.log('Database synced');
     
@@ -473,6 +499,25 @@ async function init() {
     });
   } catch (error) {
     console.error('Initialization error:', error);
+    
+    // Если ошибка связана с уникальным ограничением, пытаемся исправить
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      console.log('Attempting to fix unique constraint error...');
+      try {
+        await sequelize.query('DROP TABLE IF EXISTS `Clients_backup`;');
+        console.log('Dropped problematic backup table');
+        
+        // Перезапускаем инициализацию
+        setTimeout(() => {
+          console.log('Restarting initialization...');
+          init();
+        }, 1000);
+        return;
+      } catch (fixError) {
+        console.error('Failed to fix error:', fixError);
+      }
+    }
+    
     process.exit(1);
   }
 }
