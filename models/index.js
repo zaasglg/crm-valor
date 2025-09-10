@@ -39,6 +39,10 @@ const Client = sequelize.define('Client', {
   comment: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  cluster: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 });
 
@@ -102,11 +106,40 @@ const User = sequelize.define('User', {
     allowNull: false
   },
   role: {
-    type: DataTypes.ENUM('admin', 'operator'),
+    type: DataTypes.ENUM('admin', 'fd_manager', 'rd_manager'),
     allowNull: false,
-    defaultValue: 'operator'
+    defaultValue: 'fd_manager'
+  },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
   created_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  }
+});
+
+const Settings = sequelize.define('Settings', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  key: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  value: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  created_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+  updated_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   }
@@ -115,4 +148,4 @@ const User = sequelize.define('User', {
 Client.hasMany(Message, { foreignKey: 'client_id' });
 Message.belongsTo(Client, { foreignKey: 'client_id' });
 
-module.exports = { sequelize, Client, Message, User };
+module.exports = { sequelize, Client, Message, User, Settings };

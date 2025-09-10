@@ -5,8 +5,8 @@ const socketIo = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { sequelize, Client, Message, User, Settings } = require('./models');
-const TelegramService = require('./telegram');
+const { sequelize, Client, Message, User } = require('./models');
+const TelegramWebhookService = require('./telegram-webhook');
 const MessageClassifier = require('./message-classifier');
 const AutomationEngine = require('./automation-engine');
 
@@ -33,7 +33,22 @@ const messageClassifier = new MessageClassifier();
 const automationEngine = new AutomationEngine();
 let automationRules = [];
 
-// Routes
+// Webhook endpoint для Telegram
+app.post('/webhook/:token', (req, res) => {
+  const token = req.params.token;
+  
+  if (token !== process.env.TELEGRAM_BOT_TOKEN) {
+    return res.status(401).send('Unauthorized');
+  }
+  
+  if (telegramService && telegramService.getWebhookHandler) {
+    telegramService.getWebhookHandler()(req, res);
+  } else {
+    res.status(500).send('Telegram service not initialized');
+  }
+});
+
+// Routes (все остальные маршруты остаются такими же)
 app.get('/login', (req, res) => {
   res.render('login');
 });
@@ -46,7 +61,6 @@ app.get('/', (req, res) => {
   res.render('chat');
 });
 
-// Старый интерфейс чатов для совместимости
 app.get('/old-chat', (req, res) => {
   res.render('index');
 });
@@ -69,17 +83,15 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Перенаправление на новый дашборд
+// Admin routes
 app.get('/admin', (req, res) => {
   res.redirect('/admin/dashboard');
 });
 
-// Старая админка (оставляем для совместимости)
 app.get('/admin/old', (req, res) => {
   res.render('admin');
 });
 
-// Новые AdminLTE маршруты
 app.get('/admin/dashboard', (req, res) => {
   res.render('layout', {
     title: 'Дашборд - CRM',
@@ -166,82 +178,13 @@ app.get('/user-card-fragment', (req, res) => {
   });
 });
 
-app.get('/api/settings/:key', async (req, res) => {
+// API routes
+app.get('/api/users', async (req, res) => {
   try {
-    const setting = await Settings.findOne({ where: { key: req.params.key } });
-    if (!setting) {
-      return res.status(404).json({ error: 'Setting not found' });
-    }
-    res.json({ key: setting.key, value: JSON.parse(setting.value) });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/settings/:key', async (req, res) => {
-  try {
-    const { value } = req.body;
-    const [setting, created] = await Settings.upsert({
-      key: req.params.key,
-      value: JSON.stringify(value)
+    const users = await User.findAll({
+      attributes: ['id', 'username', 'role', 'created_at']
     });
-    res.json({ key: setting.key, value: JSON.parse(setting.value) });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/fd-managers', async (req, res) => {
-  try {
-    const managers = await User.findAll({
-      where: { 
-        role: 'fd_manager',
-        is_active: true
-      },
-      attributes: ['id', 'username', 'role', 'is_active']
-    });
-    res.json(managers);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/distribution-settings', async (req, res) => {
-  try {
-    const setting = await Settings.findOne({ where: { key: 'distribution_method' } });
-    const method = setting ? JSON.parse(setting.value) : 'round-robin';
-    res.json({ method });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/distribution-settings', async (req, res) => {
-  try {
-    const { method } = req.body;
-    if (!['round-robin', 'random', 'by_load'].includes(method)) {
-      return res.status(400).json({ error: 'Invalid distribution method' });
-    }
-    
-    await Settings.upsert({
-      key: 'distribution_method',
-      value: JSON.stringify(method)
-    });
-    
-    res.json({ method });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/manager-load/:username', async (req, res) => {
-  try {
-    const count = await Client.count({
-      where: {
-        assigned_to: req.params.username
-      }
-    });
-    res.json({ load: count });
+    res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -250,23 +193,8 @@ app.get('/api/manager-load/:username', async (req, res) => {
 app.post('/api/users', async (req, res) => {
   try {
     const { username, password, role } = req.body;
-    const user = await User.create({ username, password, role, is_active: true });
-    res.json({ id: user.id, username: user.username, role: user.role, is_active: user.is_active });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.put('/api/users/:id', async (req, res) => {
-  try {
-    const { username, password, role, is_active } = req.body;
-    const user = await User.findByPk(req.params.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    await user.update({ username, password, role, is_active });
-    res.json({ id: user.id, username: user.username, role: user.role, is_active: user.is_active });
+    const user = await User.create({ username, password, role });
+    res.json({ id: user.id, username: user.username, role: user.role });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -497,11 +425,21 @@ app.delete('/api/automation-rules/:id', (req, res) => {
   }
 });
 
-app.post('/telegram-webhook', (req, res) => {
-  if (telegramService && telegramService.bot) {
-    telegramService.bot.processUpdate(req.body);
+app.post('/api/upload-automation-file', upload.single('file'), (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    res.json({ 
+      success: true, 
+      filePath: `/uploads/${file.filename}`,
+      fileName: file.originalname
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  res.sendStatus(200);
 });
 
 // Socket.IO
@@ -519,32 +457,6 @@ async function init() {
     await sequelize.authenticate();
     console.log('Database connected');
     
-    // Безопасная синхронизация с резервным копированием
-    try {
-      // Проверяем существование таблицы Clients
-      const [tables] = await sequelize.query("SELECT name FROM sqlite_master WHERE type='table' AND name='Clients';");
-      
-      if (tables.length > 0) {
-        // Создаем резервную копию только если таблица существует и не пустая
-        const [clientCount] = await sequelize.query('SELECT COUNT(*) as count FROM `Clients`;');
-        
-        if (clientCount[0].count > 0) {
-          // Удаляем старую резервную копию
-          await sequelize.query('DROP TABLE IF EXISTS `Clients_backup`;');
-          
-          // Создаем новую резервную копию
-          await sequelize.query(`
-            CREATE TABLE \`Clients_backup\` AS 
-            SELECT * FROM \`Clients\` WHERE \`id\` IS NOT NULL;
-          `);
-          
-          console.log(`Backup created with ${clientCount[0].count} records`);
-        }
-      }
-    } catch (backupError) {
-      console.warn('Backup creation failed:', backupError.message);
-    }
-    
     await sequelize.sync({ force: false });
     console.log('Database synced');
     
@@ -560,9 +472,23 @@ async function init() {
     }
     
     if (process.env.TELEGRAM_BOT_TOKEN) {
-      telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN, io, automationEngine);
+      telegramService = new TelegramWebhookService(process.env.TELEGRAM_BOT_TOKEN, io, automationEngine);
       automationEngine.setTelegramService(telegramService);
-      console.log('Telegram bot initialized');
+      console.log('Telegram webhook service initialized');
+      
+      // Если указан WEBHOOK_URL, автоматически настраиваем webhook
+      if (process.env.WEBHOOK_URL) {
+        console.log('Setting up webhook automatically...');
+        const success = await telegramService.setupWebhook(process.env.WEBHOOK_URL);
+        if (success) {
+          console.log('✅ Webhook configured successfully');
+        } else {
+          console.log('❌ Failed to configure webhook');
+        }
+      } else {
+        console.log('WEBHOOK_URL not set. Use setup-webhook.js to configure webhook manually');
+      }
+      
       console.log('Automation engine linked to telegram service');
     } else {
       console.warn('TELEGRAM_BOT_TOKEN not provided');
@@ -571,28 +497,10 @@ async function init() {
     const PORT = process.env.PORT || 3001;
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
+      console.log(`Webhook endpoint: http://localhost:${PORT}/webhook/${process.env.TELEGRAM_BOT_TOKEN}`);
     });
   } catch (error) {
     console.error('Initialization error:', error);
-    
-    // Если ошибка связана с уникальным ограничением, пытаемся исправить
-    if (error.name === 'SequelizeUniqueConstraintError') {
-      console.log('Attempting to fix unique constraint error...');
-      try {
-        await sequelize.query('DROP TABLE IF EXISTS `Clients_backup`;');
-        console.log('Dropped problematic backup table');
-        
-        // Перезапускаем инициализацию
-        setTimeout(() => {
-          console.log('Restarting initialization...');
-          init();
-        }, 1000);
-        return;
-      } catch (fixError) {
-        console.error('Failed to fix error:', fixError);
-      }
-    }
-    
     process.exit(1);
   }
 }

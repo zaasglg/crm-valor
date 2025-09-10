@@ -137,7 +137,16 @@
         
         // Отображение текущего пользователя
         document.getElementById('username-display').textContent = user.username;
-        document.getElementById('user-role-display').textContent = user.role === 'admin' ? 'Администратор' : 'Оператор';
+        document.getElementById('user-role-display').textContent = getRoleDisplayName(user.role);
+        
+        function getRoleDisplayName(role) {
+            switch(role) {
+                case 'admin': return 'Администратор';
+                case 'fd_manager': return 'ФД-менеджер';
+                case 'rd_manager': return 'РД-менеджер';
+                default: return 'Пользователь';
+            }
+        }
         
         // Устанавливаем аватар пользователя
         const userAvatar = document.getElementById('user-avatar-sidebar');
@@ -160,8 +169,8 @@
         socket.on('new_message', (data) => {
             // Проверяем доступ к клиенту
             const hasAccess = user.role === 'admin' || 
-                             data.client_assigned_to === user.username || 
-                             !data.client_assigned_to;
+                             (user.role === 'fd_manager' && (data.client_assigned_to === user.username || !data.client_assigned_to)) ||
+                             (user.role === 'rd_manager' && data.client_assigned_to === user.username);
             
             if (!hasAccess) return;
             
@@ -266,7 +275,10 @@
                     <strong>${client.name}</strong>
                     <div>Telegram</div>
                     ${client.assigned_to ? `<small>Назначен: ${client.assigned_to}</small>` : ''}
-
+                    <div style="margin-top: 8px; display: flex; gap: 5px;">
+                        <button onclick="event.stopPropagation(); openUserCardModal(${client.id})" style="padding: 2px 8px; font-size: 12px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">👤 Карточка</button>
+                        ${user.role === 'admin' ? `<button onclick="event.stopPropagation(); assignClient(${client.id})" style="padding: 2px 8px; font-size: 12px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">Назначить</button>` : ''}
+                    </div>
                 </div>`
             ).join('');
         }
@@ -427,10 +439,10 @@
             fetch('/api/users')
                 .then(res => res.json())
                 .then(users => {
-                    const operators = users.filter(u => u.role === 'operator');
+                    const managers = users.filter(u => (u.role === 'fd_manager' || u.role === 'rd_manager') && u.is_active);
                     const select = document.createElement('select');
                     select.innerHTML = '<option value="">Не назначен</option>' + 
-                        operators.map(u => `<option value="${u.username}">${u.username}</option>`).join('');
+                        managers.map(u => `<option value="${u.username}">${u.username} (${getRoleDisplayName(u.role)})</option>`).join('');
                     
                     const modal = document.createElement('div');
                     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
@@ -470,15 +482,16 @@
             .then(data => {
                 if (Array.isArray(data)) {
                     data.forEach(client => {
-                        // Показываем клиента только если:
-                        // 1. Пользователь админ
-                        // 2. Клиент назначен текущему пользователю
-                        // 3. Клиент не назначен никому
-                        if (user.role === 'admin' || 
-                            client.assigned_to === user.username || 
-                            !client.assigned_to) {
-                            clients[client.id] = client;
-                        }
+        // Показываем клиента только если:
+        // 1. Пользователь админ
+        // 2. Пользователь ФД-менеджер и клиент назначен ему
+        // 3. Пользователь РД-менеджер и клиент назначен ему
+        // 4. Клиент не назначен никому (для ФД-менеджеров)
+        if (user.role === 'admin' || 
+            (user.role === 'fd_manager' && (client.assigned_to === user.username || !client.assigned_to)) ||
+            (user.role === 'rd_manager' && client.assigned_to === user.username)) {
+            clients[client.id] = client;
+        }
                     });
                 }
                 renderClients();

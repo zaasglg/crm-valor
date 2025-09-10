@@ -1,92 +1,89 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { Client, Message } = require('./models');
-const ChatDistributionService = require('./chatDistributionService');
 
-class TelegramService {
+class TelegramWebhookService {
   constructor(token, io, automationEngine = null) {
     this.token = token;
     this.io = io;
     this.bot = null;
     this.automationEngine = automationEngine;
-    this.distributionService = new ChatDistributionService();
+    this.webhookUrl = null;
     this.initBot();
-  }
-  
-  async stop() {
-    if (this.bot) {
-      try {
-        await this.bot.stopPolling();
-        console.log('Bot polling stopped');
-      } catch (error) {
-        console.log('Error stopping bot:', error.message);
-      }
-    }
   }
 
   async initBot() {
     try {
-      console.log('Initializing Telegram bot...');
-
-      // Создаем бота с простыми настройками
-      this.bot = new TelegramBot(this.token, {
-        polling: {
-          interval: 3000,
-          autoStart: true
-        }
-      });
-
-      console.log('Bot polling started');
-      this.setupHandlers();
+      // Создаем бота без polling для webhook
+      this.bot = new TelegramBot(this.token, { polling: false });
+      
+      console.log('Telegram bot initialized for webhook mode');
       this.setupErrorHandling();
     } catch (error) {
-      console.error('❌ Error initializing bot:', error.message);
-      console.error('Error code:', error.code);
-
-      if (error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND' || error.code === 'EFATAL') {
-        console.log('⚠️  Telegram API недоступен в этой сети');
-        console.log('💡 Возможные решения:');
-        console.log('   1. Используйте VPN');
-        console.log('   2. Подключитесь к другой сети');
-        console.log('   3. Обратитесь к администратору сети');
-
-        // Повторная попытка через 5 минут
-        console.log('🔄 Повторная попытка через 5 минут...');
-        setTimeout(() => this.initBot(), 300000);
-      }
+      console.error('Error initializing bot:', error.message);
     }
-  }  setupErrorHandling() {
-    this.bot.on('polling_error', (error) => {
-      if (error.code === 'ETELEGRAM' && error.message.includes('409')) {
-        console.log('Conflict detected - waiting before retry...');
-        // Просто ждем, не перезапускаем
+  }
+
+  async setupWebhook(webhookUrl, port = 3001) {
+    try {
+      this.webhookUrl = webhookUrl;
+      
+      // Удаляем старый webhook
+      await this.bot.deleteWebHook();
+      console.log('Old webhook deleted');
+      
+      // Устанавливаем новый webhook
+      const result = await this.bot.setWebHook(`${webhookUrl}/webhook/${this.token}`, {
+        allowed_updates: ['message', 'callback_query']
+      });
+      
+      if (result) {
+        console.log(`Webhook set successfully: ${webhookUrl}/webhook/${this.token}`);
+        
+        // Проверяем статус webhook
+        const webhookInfo = await this.bot.getWebHookInfo();
+        console.log('Webhook info:', webhookInfo);
+        
+        return true;
       } else {
-        console.log('Other polling error:', error.message);
+        throw new Error('Failed to set webhook');
       }
-    });
-    
+    } catch (error) {
+      console.error('Error setting webhook:', error.message);
+      return false;
+    }
+  }
+
+  // Обработчик для Express маршрута webhook
+  getWebhookHandler() {
+    return async (req, res) => {
+      try {
+        const update = req.body;
+        
+        if (update.message) {
+          if (update.message.text) {
+            await this.handleIncomingMessage(update.message);
+          } else if (update.message.document || update.message.photo) {
+            await this.handleIncomingFile(update.message);
+          }
+        }
+        
+        res.status(200).send('OK');
+      } catch (error) {
+        console.error('Webhook handler error:', error);
+        res.status(500).send('Error');
+      }
+    };
+  }
+
+  setupErrorHandling() {
     this.bot.on('error', (error) => {
       console.log('Bot error:', error.message);
     });
   }
 
-  setupHandlers() {
-    console.log('Setting up Telegram bot handlers...');
-    
-    this.bot.on('message', async (msg) => {
-      console.log('Bot received message event');
-      if (msg.text) {
-        await this.handleIncomingMessage(msg);
-      } else if (msg.document || msg.photo) {
-        await this.handleIncomingFile(msg);
-      }
-    });
-    
-    console.log('Telegram bot handlers set up');
-  }
-
   async handleIncomingMessage(msg) {
     try {
-      console.log('=== INCOMING MESSAGE ===');
+      console.log('=== INCOMING MESSAGE (WEBHOOK) ===');
       console.log('From:', msg.from.id, msg.from.first_name, msg.from.last_name);
       console.log('Text:', msg.text);
       console.log('Chat ID:', msg.chat.id);
@@ -105,16 +102,6 @@ class TelegramService {
       });
 
       console.log('Client found/created:', client.id, client.name, 'Created:', created);
-
-      // Если клиент новый, назначаем ему менеджера
-      if (created) {
-        console.log('New client detected, assigning to manager...');
-        const assignedManager = await this.distributionService.assignChatToManager(client.id);
-        if (assignedManager) {
-          client.assigned_to = assignedManager;
-          console.log(`Client ${client.id} assigned to ${assignedManager}`);
-        }
-      }
 
       // Проверяем, нет ли уже такого сообщения
       const existingMessage = await Message.findOne({
@@ -286,6 +273,17 @@ class TelegramService {
       throw error;
     }
   }
+
+  async stop() {
+    if (this.bot) {
+      try {
+        await this.bot.deleteWebHook();
+        console.log('Webhook deleted');
+      } catch (error) {
+        console.log('Error deleting webhook:', error.message);
+      }
+    }
+  }
 }
 
-module.exports = TelegramService;
+module.exports = TelegramWebhookService;

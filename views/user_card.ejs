@@ -6,27 +6,14 @@
         </div>
     </div>
     
-    <div class="stats-grid">
-        <div class="stat-item">
-            <div class="stat-number" id="modal-total-messages">0</div>
-            <div class="stat-label">Всего сообщений</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number" id="modal-incoming-messages">0</div>
-            <div class="stat-label">Входящих</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number" id="modal-outgoing-messages">0</div>
-            <div class="stat-label">Исходящих</div>
-        </div>
-    </div>
+
     
     <div class="info-section">
-        <h3>Информация</h3>
+        <h3><i class="fas fa-info-circle"></i> Информация</h3>
         <div class="info-item">
             <span class="info-item-label">ID пользователя:</span>
             <span class="info-item-value" id="modal-user-id">-</span>
-        </div>ч
+        </div>
         <div class="info-item">
             <span class="info-item-label">Внешний ID:</span>
             <span class="info-item-value" id="modal-external-id">-</span>
@@ -53,15 +40,17 @@
     </div>
     
     <div class="info-section">
-        <h3>Комментарий</h3>
-        <textarea id="modal-user-comment" placeholder="Добавьте комментарий к пользователю..." style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
-        <button onclick="saveClientData()" style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Сохранить данные</button>
+        <h3><i class="fas fa-comment-alt"></i> Комментарий</h3>
+        <textarea id="modal-user-comment" placeholder="Добавьте комментарий к пользователю..." style="width: 100%; min-height: 100px; padding: 15px; border: 2px solid #e9ecef; border-radius: 15px; resize: vertical; font-size: 14px; transition: border-color 0.3s ease; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);"></textarea>
+        <button onclick="saveClientData()" class="btn-save" style="margin-top: 15px; width: 100%;">
+          <i class="fas fa-save"></i> Сохранить данные
+        </button>
     </div>
     
     <script>
     let selectedClusters = [];
     
-    function toggleCluster(cluster) {
+    window.toggleCluster = function(cluster) {
         const index = selectedClusters.indexOf(cluster);
         const btn = document.querySelector(`[data-cluster="${cluster}"]`);
         
@@ -78,7 +67,7 @@
         updateSelectedClusters();
     }
     
-    function updateSelectedClusters() {
+    window.updateSelectedClusters = function() {
         const container = document.getElementById('selected-clusters');
         if (selectedClusters.length === 0) {
             container.innerHTML = '<span style="color: #6c757d; font-size: 12px;">Кластеры не выбраны</span>';
@@ -97,7 +86,7 @@
         }
     }
     
-    function setClientClusters(clusters) {
+    window.setClientClusters = function(clusters) {
         selectedClusters = clusters || [];
         
         // Сбрасываем все кнопки
@@ -118,7 +107,7 @@
         updateSelectedClusters();
     }
     
-    function getSelectedClusters() {
+    window.getSelectedClusters = function() {
         return selectedClusters;
     }
     </script>

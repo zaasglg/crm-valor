@@ -42,6 +42,7 @@
                 <th>ID</th>
                 <th>Логин</th>
                 <th>Роль</th>
+                <th>Статус</th>
                 <th>Создан</th>
                 <th>Действия</th>
             </tr>
@@ -51,7 +52,23 @@
     </table>
 
     <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #ddd;">
-        <h2>Рассылка сообщений</h2>
+        <h2>Настройки распределения чатов</h2>
+        <div class="form-group">
+            <label>Метод распределения:</label>
+            <select id="distribution-method">
+                <option value="round-robin">По очереди (Round-robin)</option>
+                <option value="random">Случайно</option>
+                <option value="by_load">По нагрузке (меньше занят)</option>
+            </select>
+        </div>
+        <button class="btn" onclick="saveDistributionSettings()">Сохранить настройки</button>
+        <div id="settings-status" style="margin-top: 10px; color: #666;"></div>
+    </div>
+
+    <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #ddd;">
+        <h2>Активные ФД-менеджеры</h2>
+        <div id="fd-managers-list" style="margin-top: 20px;"></div>
+    </div>
         <div class="form-group">
             <label>Сообщение для рассылки:</label>
             <textarea id="broadcast-message" placeholder="Введите текст сообщения..." style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; box-sizing: border-box;"></textarea>
@@ -78,9 +95,15 @@
                 <div class="form-group">
                     <label>Роль:</label>
                     <select id="role">
-                        <option value="operator">Оператор</option>
+                        <option value="fd_manager">ФД-менеджер</option>
+                        <option value="rd_manager">РД-менеджер</option>
                         <option value="admin">Админ</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="is_active" checked> Активен
+                    </label>
                 </div>
                 <button type="submit" class="btn">Создать</button>
             </form>
@@ -112,13 +135,24 @@
                 <tr>
                     <td>${user.id}</td>
                     <td>${user.username}</td>
-                    <td>${user.role === 'admin' ? 'Админ' : 'Оператор'}</td>
+                    <td>${getRoleName(user.role)}</td>
+                    <td>${user.is_active ? 'Активен' : 'Неактивен'}</td>
                     <td>${new Date(user.created_at).toLocaleString()}</td>
                     <td>
+                        <button class="btn" onclick="editUser(${user.id})" style="background: #f39c12; margin-right: 5px;">Изменить</button>
                         <button class="btn btn-danger" onclick="deleteUser(${user.id})">Удалить</button>
                     </td>
                 </tr>
             `).join('');
+        }
+
+        function getRoleName(role) {
+            switch(role) {
+                case 'admin': return 'Админ';
+                case 'fd_manager': return 'ФД-менеджер';
+                case 'rd_manager': return 'РД-менеджер';
+                default: return 'Неизвестно';
+            }
         }
 
         function openModal() {
@@ -142,7 +176,8 @@
             const formData = {
                 username: document.getElementById('username').value,
                 password: document.getElementById('password').value,
-                role: document.getElementById('role').value
+                role: document.getElementById('role').value,
+                is_active: document.getElementById('is_active').checked
             };
 
             fetch('/api/users', {
@@ -152,6 +187,7 @@
             }).then(() => {
                 closeModal();
                 loadUsers();
+                loadFdManagers();
             });
         });
 
@@ -193,6 +229,120 @@
                 statusEl.textContent = 'Ошибка отправки';
                 statusEl.style.color = '#e74c3c';
             });
+        }
+        
+        function loadDistributionSettings() {
+            fetch('/api/settings/distribution_method')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.value) {
+                        document.getElementById('distribution-method').value = data.value;
+                    }
+                })
+                .catch(err => console.log('Settings not found, using defaults'));
+        }
+        
+        function saveDistributionSettings() {
+            const method = document.getElementById('distribution-method').value;
+            const statusEl = document.getElementById('settings-status');
+            
+            statusEl.textContent = 'Сохранение...';
+            statusEl.style.color = '#3498db';
+            
+            fetch('/api/settings/distribution_method', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(method)
+            })
+            .then(res => res.json())
+            .then(data => {
+                statusEl.textContent = 'Настройки сохранены';
+                statusEl.style.color = '#27ae60';
+                setTimeout(() => statusEl.textContent = '', 3000);
+            })
+            .catch(err => {
+                statusEl.textContent = 'Ошибка сохранения';
+                statusEl.style.color = '#e74c3c';
+            });
+        }
+        
+        function loadFdManagers() {
+            fetch('/api/fd-managers')
+                .then(res => res.json())
+                .then(managers => {
+                    const container = document.getElementById('fd-managers-list');
+                    if (managers.length === 0) {
+                        container.innerHTML = '<p>Нет активных ФД-менеджеров</p>';
+                        return;
+                    }
+                    
+                    container.innerHTML = `
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Логин</th>
+                                    <th>Количество чатов</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${managers.map(manager => `
+                                    <tr>
+                                        <td>${manager.username}</td>
+                                        <td id="load-${manager.username}">Загрузка...</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    // Загружаем нагрузку для каждого менеджера
+                    managers.forEach(manager => {
+                        fetch(`/api/manager-load/${manager.username}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                document.getElementById(`load-${manager.username}`).textContent = data.load || 0;
+                            })
+                            .catch(err => {
+                                document.getElementById(`load-${manager.username}`).textContent = 'Ошибка';
+                            });
+                    });
+                });
+        }
+        
+        function editUser(id) {
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+            
+            document.getElementById('username').value = user.username;
+            document.getElementById('role').value = user.role;
+            document.getElementById('is_active').checked = user.is_active;
+            
+            openModal();
+            
+            // Меняем обработчик формы для редактирования
+            const form = document.getElementById('userForm');
+            const originalHandler = form.onsubmit;
+            
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                const formData = {
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value || user.password, // Если пароль не изменен
+                    role: document.getElementById('role').value,
+                    is_active: document.getElementById('is_active').checked
+                };
+
+                fetch(`/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                }).then(() => {
+                    closeModal();
+                    loadUsers();
+                    loadFdManagers();
+                    form.onsubmit = originalHandler; // Восстанавливаем оригинальный обработчик
+                });
+            };
         }
     </script>
     </div>

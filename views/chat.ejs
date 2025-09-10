@@ -8,27 +8,51 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
   <style>
-    .chat-container { height: calc(100vh - 56px); }
+    .chat-container { height: calc(100vh - 56px); display: flex; }
     .clients-sidebar { height: 100%; overflow-y: auto; }
-    .client-item { padding: 15px; border-bottom: 1px solid #dee2e6; cursor: pointer; transition: background-color 0.2s; }
-    .client-item:hover { background-color: #f8f9fa; }
-    .client-item.active { background-color: #007bff; color: white; }
-    .client-avatar { width: 40px; height: 40px; border-radius: 50%; background: #007bff; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 12px; }
-    .client-info h6 { margin: 0; font-size: 14px; font-weight: 500; }
-    .client-info small { color: #6c757d; font-size: 12px; }
-    .client-item.active .client-info small { color: rgba(255,255,255,0.8); }
-    .chat-area { height: 100%; display: flex; flex-direction: column; }
-    .chat-header { padding: 15px 20px; background: white; border-bottom: 1px solid #dee2e6; }
-    .messages-container { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; }
-    .message { margin-bottom: 15px; display: flex; }
+    .client-item { padding: 15px; border-bottom: 1px solid #dee2e6; cursor: pointer; transition: all 0.3s ease; }
+    .client-item:hover { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); transform: translateX(5px); }
+    .client-item.active { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; box-shadow: 0 4px 15px rgba(0,123,255,0.3); }
+    .client-avatar { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .client-info h6 { margin: 0; font-size: 14px; font-weight: 600; color: #ffffff; }
+    .client-info small { color: #e9ecef; font-size: 12px; }
+    .client-item.active .client-info small { color: rgba(255,255,255,0.9); }
+    .chat-main { flex: 1; display: flex; flex-direction: column; }
+    .chat-area { flex: 1; display: flex; flex-direction: column; }
+    .chat-header { position: sticky; top: 0; z-index: 100; padding: 20px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border-bottom: 1px solid #dee2e6; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .messages-container { flex: 1; padding: 20px; overflow-y: auto; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); }
+    .message { margin-bottom: 20px; display: flex; animation: fadeInUp 0.3s ease; }
     .message.in { justify-content: flex-start; }
     .message.out { justify-content: flex-end; }
-    .message-bubble { max-width: 70%; padding: 10px 15px; border-radius: 18px; position: relative; }
-    .message.in .message-bubble { background: white; border: 1px solid #dee2e6; }
+    .message-bubble { max-width: 70%; padding: 12px 18px; border-radius: 6px; position: relative; }
+    .message.in .message-bubble { background: white; border: 1px solid #e9ecef; }
     .message.out .message-bubble { background: #007bff; color: white; }
-    .message-time { font-size: 11px; opacity: 0.7; margin-top: 5px; }
-    .input-area { padding: 15px 20px; background: white; border-top: 1px solid #dee2e6; }
+    .message-time { font-size: 11px; opacity: 0.7; margin-top: 8px; }
+    .input-area { position: sticky; bottom: 0; z-index: 100; padding: 20px; background: white; border-top: 1px solid #dee2e6; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
     .no-chat { display: flex; align-items: center; justify-content: center; height: 100%; color: #6c757d; font-size: 18px; }
+    .client-sidebar { position: fixed; right: 0; top: 56px; width: 350px; background: white; border-left: 1px solid #dee2e6; height: calc(100vh - 56px); overflow-y: auto; transform: translateX(100%); transition: transform 0.3s ease; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 1000; }
+    .client-sidebar.open { transform: translateX(0); }
+    .sidebar-header { padding: 20px; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; }
+    .sidebar-content { padding: 20px; }
+    .user-profile { display: flex; align-items: center; margin-bottom: 25px; }
+    .user-avatar-large { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin-right: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 25px 0; }
+    .stat-item { text-align: center; padding: 20px; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 15px; border: 1px solid #e9ecef; box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: transform 0.2s ease; }
+    .stat-item:hover { transform: translateY(-2px); }
+    .stat-number { font-size: 24px; font-weight: bold; color: #007bff; margin-bottom: 5px; }
+    .stat-label { font-size: 12px; color: #6c757d; font-weight: 500; }
+    .info-section { margin: 25px 0; }
+    .info-section h3 { margin: 0 0 20px 0; font-size: 18px; color: #495057; font-weight: 600; }
+    .info-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f1f3f4; }
+    .info-item:last-child { border-bottom: none; }
+    .info-item-label { color: #6c757d; font-size: 14px; font-weight: 500; }
+    .info-item-value { color: #495057; font-size: 14px; font-weight: 600; }
+    .cluster-btn { padding: 8px 15px; border: 2px solid; background: white; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.3s ease; margin: 3px; }
+    .cluster-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .selected-clusters { margin: 15px 0; min-height: 40px; }
+    .btn-save { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(40,167,69,0.3); }
+    .btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(40,167,69,0.4); }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -86,13 +110,31 @@
   <!-- Content Wrapper -->
   <div class="content-wrapper p-0">
     <div class="chat-container">
-      <div class="chat-area" id="chat-area">
-        <div class="no-chat">
-          <div class="text-center">
-            <i class="fas fa-comments fa-3x mb-3"></i>
-            <h4>Выберите клиента</h4>
-            <p class="text-muted">Выберите клиента из списка слева для начала общения</p>
+      <div class="chat-main">
+        <div class="chat-area" id="chat-area">
+          <div class="no-chat">
+            <div class="text-center">
+              <i class="fas fa-comments fa-3x mb-3"></i>
+              <h4>Выберите клиента</h4>
+              <p class="text-muted">Выберите клиента из списка слева для начала общения</p>
+            </div>
           </div>
+        </div>
+      </div>
+      
+      <!-- Right Sidebar for Client Card -->
+      <div class="client-sidebar" id="client-sidebar">
+        <div class="sidebar-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Карточка клиента</h5>
+            <button class="btn btn-sm btn-outline-light" onclick="closeClientSidebar()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="sidebar-content" id="sidebar-content">
+          <!-- Контент карточки будет загружаться динамически -->
         </div>
       </div>
     </div>
@@ -200,8 +242,8 @@ function showChatArea(clientId) {
             Telegram ${client.assigned_to ? '• Назначен: ' + client.assigned_to : ''}
           </small>
         </div>
-        <button class="btn btn-outline-primary btn-sm" onclick="openUserCard(${clientId})">
-          <i class="fas fa-user"></i> Карточка
+        <button class="btn btn-outline-primary btn-sm" onclick="openClientSidebar(${clientId})">
+          <i class="fas fa-info-circle"></i>
         </button>
       </div>
     </div>
@@ -345,17 +387,21 @@ function handleFileUpload(e) {
   }
 }
 
-function openUserCard(clientId) {
+function openClientSidebar(clientId) {
   fetch('/user-card-fragment')
     .then(res => res.text())
     .then(html => {
-      document.getElementById('user-card-content').innerHTML = html;
+      // Обновляем HTML для сайдбара
+      const updatedHtml = html
+        .replace(/onclick="saveClientData\(\)"/g, 'onclick="saveClientData()" class="btn-save"')
+        .replace(/style="[^"]*"/g, '')
+        .replace(/<div class="info-item">/g, '<div class="info-item">')
+        .replace(/<div class="info-item" style="flex-direction: column; align-items: flex-start;">/g, '<div class="info-item" style="flex-direction: column; align-items: flex-start;">');
+      
+      document.getElementById('sidebar-content').innerHTML = updatedHtml;
       
       // Загружаем данные клиента
-      Promise.all([
-        fetch(`/api/clients`).then(r => r.json()),
-        fetch(`/api/messages/${clientId}`).then(r => r.json())
-      ]).then(([clientsData, messages]) => {
+      fetch(`/api/clients`).then(r => r.json()).then(clientsData => {
         const client = clientsData.find(c => c.id == clientId);
         if (client) {
           document.getElementById('modal-user-name').textContent = client.name || 'Неизвестный клиент';
@@ -372,25 +418,27 @@ function openUserCard(clientId) {
           } catch (e) {
             clusters = client.cluster ? [client.cluster] : [];
           }
-          setClientClusters(clusters);
+          console.log('Loading clusters for client:', client.id, clusters);
+          window.setClientClusters(clusters);
           
           const avatar = document.getElementById('modal-user-avatar');
           avatar.textContent = (client.name || 'U').charAt(0).toUpperCase();
         }
         
-        if (Array.isArray(messages)) {
-          const totalMessages = messages.length;
-          const incomingMessages = messages.filter(m => m.direction === 'in').length;
-          const outgoingMessages = messages.filter(m => m.direction === 'out').length;
-          
-          document.getElementById('modal-total-messages').textContent = totalMessages;
-          document.getElementById('modal-incoming-messages').textContent = incomingMessages;
-          document.getElementById('modal-outgoing-messages').textContent = outgoingMessages;
-        }
+
       });
       
-      $('#userCardModal').modal('show');
+      // Открываем сайдбар
+      document.getElementById('client-sidebar').classList.add('open');
     });
+}
+
+function closeClientSidebar() {
+  document.getElementById('client-sidebar').classList.remove('open');
+}
+
+function openUserCard(clientId) {
+  openClientSidebar(clientId);
 }
 
 function saveComment() {
@@ -399,7 +447,14 @@ function saveComment() {
 
 function saveClientData() {
   const comment = document.getElementById('modal-user-comment').value.trim();
-  const clusters = getSelectedClusters();
+  const clusters = window.getSelectedClusters ? window.getSelectedClusters() : [];
+  
+  if (!currentClientId) {
+    alert('Клиент не выбран');
+    return;
+  }
+  
+  console.log('Saving data:', { clientId: currentClientId, comment, clusters });
   
   Promise.all([
     fetch('/api/update-client-comment', {
@@ -419,12 +474,19 @@ function saveClientData() {
       alert('Данные сохранены');
       if (clients[currentClientId]) {
         clients[currentClientId].comment = comment;
-        clients[currentClientId].clusters = clusters;
+        clients[currentClientId].cluster = JSON.stringify(clusters);
+        clients[currentClientId].parsedClusters = clusters;
       }
+      // Обновляем отображение в списке
+      renderClients();
       renderClients();
     } else {
       alert('Ошибка при сохранении данных');
     }
+  })
+  .catch(error => {
+    console.error('Error saving data:', error);
+    alert('Ошибка при сохранении');
   });
 }
 
@@ -438,14 +500,13 @@ document.getElementById('search-clients').addEventListener('input', (e) => {
 });
 
 function getClientClustersHTML(client) {
-  let clusters = [];
-  try {
-    clusters = client.cluster ? JSON.parse(client.cluster) : [];
-  } catch (e) {
-    clusters = client.cluster ? [client.cluster] : [];
-  }
+  const clusters = client.parsedClusters || [];
+  console.log(`Rendering clusters for client ${client.id}:`, clusters);
   
-  if (clusters.length === 0) return '';
+  if (!Array.isArray(clusters) || clusters.length === 0) {
+    console.log(`No clusters to display for client ${client.id}`);
+    return '';
+  }
   
   const colors = {
     'VIP': '#007bff',
@@ -460,6 +521,72 @@ function getClientClustersHTML(client) {
   ).join('');
 }
 
+// Глобальные функции для работы с кластерами
+let selectedClusters = [];
+
+window.toggleCluster = function(cluster) {
+  const index = selectedClusters.indexOf(cluster);
+  const btn = document.querySelector(`[data-cluster="${cluster}"]`);
+  
+  if (index > -1) {
+    selectedClusters.splice(index, 1);
+    btn.style.background = 'white';
+    btn.style.color = btn.style.borderColor;
+  } else {
+    selectedClusters.push(cluster);
+    btn.style.background = btn.style.borderColor;
+    btn.style.color = 'white';
+  }
+  
+  updateSelectedClusters();
+};
+
+window.updateSelectedClusters = function() {
+  const container = document.getElementById('selected-clusters');
+  if (!container) return;
+  
+  if (selectedClusters.length === 0) {
+    container.innerHTML = '<span style="color: #6c757d; font-size: 12px;">Кластеры не выбраны</span>';
+  } else {
+    const colors = {
+      'VIP': '#007bff',
+      'Постоянный': '#28a745',
+      'Новый': '#17a2b8',
+      'Проблемный': '#dc3545',
+      'Активный': '#ffc107'
+    };
+    
+    container.innerHTML = selectedClusters.map(cluster => 
+      `<span style="background: ${colors[cluster]}; color: white; padding: 3px 8px; border-radius: 10px; font-size: 11px; margin-right: 5px; margin-bottom: 3px; display: inline-block;">${cluster}</span>`
+    ).join('');
+  }
+};
+
+window.setClientClusters = function(clusters) {
+  selectedClusters = clusters || [];
+  
+  // Сбрасываем все кнопки
+  document.querySelectorAll('.cluster-btn').forEach(btn => {
+    btn.style.background = 'white';
+    btn.style.color = btn.style.borderColor;
+  });
+  
+  // Активируем выбранные
+  selectedClusters.forEach(cluster => {
+    const btn = document.querySelector(`[data-cluster="${cluster}"]`);
+    if (btn) {
+      btn.style.background = btn.style.borderColor;
+      btn.style.color = 'white';
+    }
+  });
+  
+  updateSelectedClusters();
+};
+
+window.getSelectedClusters = function() {
+  return selectedClusters;
+};
+
 // Загрузка клиентов
 fetch('/api/clients')
   .then(res => res.json())
@@ -470,10 +597,23 @@ fetch('/api/clients')
         if (user.role === 'admin' || 
             client.assigned_to === user.username || 
             !client.assigned_to) {
+          // Парсим кластеры при загрузке
+          try {
+            if (client.cluster && typeof client.cluster === 'string') {
+              client.parsedClusters = JSON.parse(client.cluster);
+              console.log(`Client ${client.id} clusters:`, client.parsedClusters);
+            } else {
+              client.parsedClusters = [];
+            }
+          } catch (e) {
+            console.error('Error parsing clusters for client', client.id, e);
+            client.parsedClusters = [];
+          }
           clients[client.id] = client;
         }
       });
     }
+    console.log('Loaded clients:', Object.keys(clients).length);
     renderClients();
   })
   .catch(err => {
