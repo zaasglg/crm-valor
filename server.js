@@ -247,10 +247,22 @@ app.get('/api/manager-load/:username', async (req, res) => {
   }
 });
 
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: ['id', 'username', 'role', 'is_active', 'created_at'],
+      order: [['created_at', 'DESC']]
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/users', async (req, res) => {
   try {
-    const { username, password, role } = req.body;
-    const user = await User.create({ username, password, role, is_active: true });
+    const { username, password, role, is_active = true } = req.body;
+    const user = await User.create({ username, password, role, is_active });
     res.json({ id: user.id, username: user.username, role: user.role, is_active: user.is_active });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -16,6 +16,7 @@
               <th>ID</th>
               <th>Логин</th>
               <th>Роль</th>
+              <th>Статус</th>
               <th>Создан</th>
               <th>Действия</th>
             </tr>
@@ -51,9 +52,18 @@
           <div class="form-group">
             <label>Роль</label>
             <select class="form-control" id="role">
-              <option value="operator">Оператор</option>
+              <option value="fd_manager">FD менеджер</option>
+              <option value="rd_manager">RD менеджер</option>
               <option value="admin">Админ</option>
             </select>
+          </div>
+          <div class="form-group">
+            <div class="custom-control custom-checkbox">
+              <input class="custom-control-input" type="checkbox" id="is_active" checked>
+              <label for="is_active" class="custom-control-label">
+                Активен
+              </label>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -83,15 +93,54 @@ function renderUsers() {
     <tr>
       <td>${user.id}</td>
       <td>${user.username}</td>
-      <td><span class="badge ${user.role === 'admin' ? 'badge-danger' : 'badge-info'}">${user.role === 'admin' ? 'Админ' : 'Оператор'}</span></td>
+      <td><span class="badge ${getRoleBadgeClass(user.role)}">${getRoleName(user.role)}</span></td>
+      <td><span class="badge ${user.is_active ? 'badge-success' : 'badge-secondary'}">${user.is_active ? 'Активен' : 'Неактивен'}</span></td>
       <td>${new Date(user.created_at).toLocaleString()}</td>
       <td>
+        <button class="btn btn-warning btn-sm" onclick="toggleUserStatus(${user.id})">
+          <i class="fas ${user.is_active ? 'fa-ban' : 'fa-check'}"></i> ${user.is_active ? 'Деактивировать' : 'Активировать'}
+        </button>
         <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">
           <i class="fas fa-trash"></i> Удалить
         </button>
       </td>
     </tr>
   `).join('');
+}
+
+function getRoleName(role) {
+  switch(role) {
+    case 'admin': return 'Админ';
+    case 'fd_manager': return 'FD менеджер';
+    case 'rd_manager': return 'RD менеджер';
+    default: return role;
+  }
+}
+
+function getRoleBadgeClass(role) {
+  switch(role) {
+    case 'admin': return 'badge-danger';
+    case 'fd_manager': return 'badge-primary';
+    case 'rd_manager': return 'badge-info';
+    default: return 'badge-secondary';
+  }
+}
+
+function toggleUserStatus(id) {
+  const user = users.find(u => u.id === id);
+  if (!user) return;
+
+  const newStatus = !user.is_active;
+  fetch(`/api/users/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: user.username,
+      password: user.password,
+      role: user.role,
+      is_active: newStatus
+    })
+  }).then(() => loadUsers());
 }
 
 function deleteUser(id) {
@@ -106,7 +155,8 @@ document.getElementById('userForm').addEventListener('submit', (e) => {
   const formData = {
     username: document.getElementById('username').value,
     password: document.getElementById('password').value,
-    role: document.getElementById('role').value
+    role: document.getElementById('role').value,
+    is_active: document.getElementById('is_active').checked
   };
 
   fetch('/api/users', {
@@ -116,6 +166,7 @@ document.getElementById('userForm').addEventListener('submit', (e) => {
   }).then(() => {
     $('#addUserModal').modal('hide');
     document.getElementById('userForm').reset();
+    document.getElementById('is_active').checked = true; // Сброс к checked
     loadUsers();
   });
 });
