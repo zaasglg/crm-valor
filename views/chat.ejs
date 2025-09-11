@@ -213,6 +213,55 @@ socket.on('new_message', (data) => {
   updateClientPreview(data.client_id, data.message);
 });
 
+// Обработка уведомлений автоматизации
+socket.on('automation_notification', (data) => {
+  const hasAccess = user.role === 'admin' || 
+                   clients[data.client_id]?.assigned_to === user.username || 
+                   !clients[data.client_id]?.assigned_to;
+  
+  if (!hasAccess) return;
+  
+  showAutomationNotification(data);
+});
+
+function showAutomationNotification(data) {
+  // Создаем уведомление
+  const notification = document.createElement('div');
+  notification.className = 'alert alert-info alert-dismissible fade show';
+  notification.style.cssText = `
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 400px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border-left: 4px solid #007bff;
+  `;
+  
+  notification.innerHTML = `
+    <div class="d-flex align-items-center">
+      <i class="fas fa-robot mr-2 text-primary"></i>
+      <div class="flex-grow-1">
+        <strong>${data.client_name}</strong><br>
+        <small>${data.message}</small>
+      </div>
+      <button type="button" class="close" data-dismiss="alert">
+        <span>&times;</span>
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Автоматически скрываем через 5 секунд
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 5000);
+}
+
 function selectClient(clientId) {
   currentClientId = clientId;
   
