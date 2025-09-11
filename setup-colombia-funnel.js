@@ -12,7 +12,8 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Функция для проверки, запущен ли сервер
 async function checkServer() {
   try {
-    const response = await fetch('http://localhost:3001/api/automation-rules');
+    const serverUrl = process.env.SERVER_DOMAIN || 'http://localhost:3001';
+    const response = await fetch(`${serverUrl}/api/automation-rules`);
     return response.ok;
   } catch (error) {
     return false;
@@ -31,7 +32,8 @@ async function loadRules() {
     for (let i = 0; i < rules.length; i++) {
       const rule = rules[i];
       try {
-        const response = await fetch('http://localhost:3001/api/automation-rules', {
+        const serverUrl = process.env.SERVER_DOMAIN || 'http://localhost:3001';
+        const response = await fetch(`${serverUrl}/api/automation-rules`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -60,7 +62,8 @@ async function loadRules() {
     console.log('3. Ответ на 2смс → регистрация (при любом ответе с тегом "2смс")');
     console.log('4. Прошел регу → демо (при добавлении тега "Прошел регу Колумбия")');
     console.log('5. Переходная воронка ФД→РД (при добавлении тега "переход_к_рд")');
-    console.log('\n🔧 Для управления правилами откройте: http://localhost:3001/admin/automation');
+    const serverUrl = process.env.SERVER_DOMAIN || 'http://localhost:3001';
+    console.log(`\n🔧 Для управления правилами откройте: ${serverUrl}/admin/automation`);
     
   } catch (error) {
     console.error('❌ Ошибка при загрузке схемы:', error.message);
