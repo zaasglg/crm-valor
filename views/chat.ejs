@@ -422,6 +422,9 @@ function renderClients() {
             <div class="clusters-display" style="margin-top: 5px;">
               ${getClientClustersHTML(client)}
             </div>
+            <div class="automation-tags-display" style="margin-top: 3px;">
+              ${getClientAutomationTagsHTML(client)}
+            </div>
             <div class="last-message" id="preview-${client.id}"></div>
           </div>
           ${isUnread ? `<div class="unread-badge">${unreadCount > 99 ? '99+' : unreadCount}</div>` : ''}
@@ -618,6 +621,21 @@ function getClientClustersHTML(client) {
   
   return clusters.map(cluster => 
     `<span style="background: ${colors[cluster] || '#6c757d'}; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; margin-right: 3px; display: inline-block;">${cluster}</span>`
+  ).join('');
+}
+
+function getClientAutomationTagsHTML(client) {
+  const tags = client.parsedTags || [];
+  console.log(`Rendering automation tags for client ${client.id}:`, tags);
+  
+  if (!Array.isArray(tags) || tags.length === 0) {
+    return '';
+  }
+  
+  return tags.map(tag => 
+    `<span style="background: #17a2b8; color: white; padding: 1px 5px; border-radius: 6px; font-size: 9px; margin-right: 2px; display: inline-block;">
+      <i class="fas fa-robot" style="font-size: 8px; margin-right: 2px;"></i>${tag}
+    </span>`
   ).join('');
 }
 
