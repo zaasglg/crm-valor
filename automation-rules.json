@@ -40,8 +40,7 @@
       ],
       "send_file": {
         "path": "./uploads/first_photo.JPG",
-        "name": "first_photo.JPG",
-        "delay": 4000
+        "name": "first_photo.JPG"
       },
       "remove_tag": "2смс",
       "add_tag": "регистрация"
