@@ -128,10 +128,11 @@ class TelegramService {
         }
       });
       
-      if (existingMessage) {
-        console.log('Duplicate message detected, skipping');
-        return;
-      }
+  // Отключено: фильтрация дубликатов
+  // if (existingMessage) {
+  //   console.log('Duplicate message detected, skipping');
+  //   return;
+  // }
 
       const message = await Message.create({
         client_id: client.id,
