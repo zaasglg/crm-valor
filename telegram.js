@@ -157,14 +157,10 @@ class TelegramService {
       console.log('Emitting to clients:', JSON.stringify(emitData, null, 2));
       this.io.emit('new_message', emitData);
       
-      // Получаем актуальные теги клиента (пример: client.tags или из базы)
-      let clientTags = [];
-      if (client.tags) {
-        clientTags = Array.isArray(client.tags) ? client.tags : [client.tags];
-      } else if (typeof getClientTags === 'function') {
-        clientTags = await getClientTags(client.id);
-      }
-
+      // Получаем клиента
+      const clientData = await Client.findByPk(client.id);
+      // Получаем актуальные теги
+      const clientTags = clientData && clientData.tags ? clientData.tags : [];
       // Запускаем автоматизацию с тегами
       if (this.automationEngine) {
         console.log('Processing automation rules...');
@@ -173,7 +169,7 @@ class TelegramService {
           message: message,
           channel: 'telegram',
           tags: clientTags,
-          client: client
+          client: clientData
         });
       }
       
