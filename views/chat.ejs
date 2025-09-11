@@ -346,15 +346,35 @@ function updateAutomationTagsInSidebar(clientId) {
         automationTags = [];
       }
       
-      // Обновляем отображение в сайдбаре
+      // Разделяем теги на автоматические и ручные
+      const autoTags = ['1смс', '2смс', 'регистрация'];
+      const automaticTags = automationTags.filter(tag => autoTags.includes(tag));
+      const manualTags = automationTags.filter(tag => !autoTags.includes(tag));
+      
+      // Обновляем автоматические теги
       const automationTagsContainer = document.getElementById('automation-tags');
       if (automationTagsContainer) {
-        if (automationTags.length === 0) {
+        if (automaticTags.length === 0) {
           automationTagsContainer.innerHTML = '<span style="color: #6c757d; font-size: 12px;">Теги не назначены</span>';
         } else {
-          automationTagsContainer.innerHTML = automationTags.map(tag => 
+          automationTagsContainer.innerHTML = automaticTags.map(tag => 
             `<span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px; margin-bottom: 3px; display: inline-block;">
               <i class="fas fa-robot mr-1"></i>${tag}
+            </span>`
+          ).join('');
+        }
+      }
+      
+      // Обновляем ручные теги
+      const manualTagsContainer = document.getElementById('manual-tags');
+      if (manualTagsContainer) {
+        if (manualTags.length === 0) {
+          manualTagsContainer.innerHTML = '<span style="color: #6c757d; font-size: 12px;">Ручные теги не добавлены</span>';
+        } else {
+          manualTagsContainer.innerHTML = manualTags.map(tag => 
+            `<span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px; margin-bottom: 3px; display: inline-block;">
+              <i class="fas fa-user mr-1"></i>${tag}
+              <i class="fas fa-times" onclick="removeManualTag('${tag}')" style="margin-left: 5px; cursor: pointer; opacity: 0.7;" title="Удалить тег"></i>
             </span>`
           ).join('');
         }
