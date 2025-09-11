@@ -157,10 +157,26 @@ class TelegramService {
       console.log('Emitting to clients:', JSON.stringify(emitData, null, 2));
       this.io.emit('new_message', emitData);
       
-      // Получаем клиента
+      // Получаем клиента с актуальными тегами
       const clientData = await Client.findByPk(client.id);
-      // Получаем актуальные теги
-      const clientTags = clientData && clientData.tags ? clientData.tags : [];
+      let clientTags = clientData && clientData.tags ? clientData.tags : [];
+      
+      // Проверяем и парсим теги если они строка
+      if (typeof clientTags === 'string') {
+        try {
+          clientTags = JSON.parse(clientTags);
+        } catch (e) {
+          clientTags = [];
+        }
+      }
+      
+      // Убеждаемся что это массив
+      if (!Array.isArray(clientTags)) {
+        clientTags = [];
+      }
+      
+      console.log(`Client ${client.id} current tags:`, clientTags);
+      
       // Запускаем автоматизацию с тегами
       if (this.automationEngine) {
         console.log('Processing automation rules...');
