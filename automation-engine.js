@@ -134,7 +134,7 @@ class AutomationEngine {
           currentTags = [];
         }
         const newTags = [...new Set([...currentTags, ...tags])];
-        await client.update({ tags: newTags });
+        await client.update({ tags: JSON.stringify(newTags) });
         console.log(`Tags updated for client ${clientId}:`, newTags);
         
         // Отправляем системное сообщение в чат
@@ -176,7 +176,7 @@ class AutomationEngine {
           currentTags = [];
         }
         const newTags = currentTags.filter(tag => !tags.includes(tag));
-        await client.update({ tags: newTags });
+        await client.update({ tags: JSON.stringify(newTags) });
         console.log(`Tags updated for client ${clientId}:`, newTags);
         
         // Отправляем системное сообщение в чат
