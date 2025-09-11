@@ -10,8 +10,7 @@
         { "text": "Quieres saber cómo funciona mi aplicación?", "delay": 2000 }
       ],
       "add_tag": "1смс"
-    },
-    "stop_funnel_until_reply": true
+    }
   },
   {
     "id": "step2_reply",
