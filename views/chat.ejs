@@ -102,10 +102,40 @@
     <div class="sidebar">
       <div class="clients-sidebar">
         <div class="p-3">
-          <div class="input-group">
+          <div class="input-group mb-3">
             <input type="text" class="form-control form-control-sm" placeholder="Поиск клиентов..." id="search-clients">
             <div class="input-group-append">
               <span class="input-group-text"><i class="fas fa-search"></i></span>
+            </div>
+          </div>
+          
+          <!-- Фильтры чатов -->
+          <div class="chat-filters mb-3">
+            <div class="btn-group-vertical w-100" role="group">
+              <button type="button" class="btn btn-sm btn-outline-primary active" data-filter="all">
+                <i class="fas fa-comments mr-1"></i> Все чаты
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-info" data-filter="new">
+                <i class="fas fa-plus mr-1"></i> Новые
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-success" data-filter="my">
+                <i class="fas fa-user mr-1"></i> Мои чаты
+              </button>
+            </div>
+          </div>
+          
+          <!-- Статусы -->
+          <div class="chat-status-filters">
+            <div class="btn-group-vertical w-100" role="group">
+              <button type="button" class="btn btn-sm btn-outline-warning" data-status="unread">
+                <i class="fas fa-envelope mr-1"></i> Непрочитанные
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger" data-status="overdue">
+                <i class="fas fa-clock mr-1"></i> Просроченные
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-status="open">
+                <i class="fas fa-folder-open mr-1"></i> Открытые
+              </button>
             </div>
           </div>
         </div>
