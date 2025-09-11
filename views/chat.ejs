@@ -264,10 +264,18 @@ socket.on('new_message', (data) => {
   
   if (currentClientId === data.client_id) {
     renderMessages();
+    
+    // Обновляем теги в сайдбаре при любом сообщении
+    if (document.getElementById('client-sidebar').classList.contains('open')) {
+      updateAutomationTagsInSidebar(data.client_id);
+    }
   }
   
   // Обновляем превью последнего сообщения
   updateClientPreview(data.client_id, data.message);
+  
+  // Обновляем теги в списке клиентов
+  setTimeout(() => updateClientTagsInList(data.client_id), 500);
   renderClients();
 });
 
@@ -361,6 +369,37 @@ function updateAutomationTagsInSidebar(clientId) {
       renderClients();
     })
     .catch(err => console.error('Error updating tags:', err));
+}
+
+function updateClientTagsInList(clientId) {
+  fetch(`/api/clients/${clientId}`)
+    .then(res => res.json())
+    .then(clientData => {
+      let automationTags = [];
+      try {
+        if (clientData.tags) {
+          let parsed = clientData.tags;
+          if (typeof parsed === 'string') {
+            parsed = JSON.parse(parsed);
+            if (typeof parsed === 'string') {
+              parsed = JSON.parse(parsed);
+            }
+          }
+          if (Array.isArray(parsed)) {
+            automationTags = parsed.filter(tag => typeof tag === 'string' && tag.length > 1);
+          }
+        }
+      } catch (e) {
+        automationTags = [];
+      }
+      
+      // Обновляем теги в клиенте
+      if (clients[clientId]) {
+        clients[clientId].parsedTags = automationTags;
+        renderClients();
+      }
+    })
+    .catch(err => console.error('Error updating client tags:', err));
 }
 
 
