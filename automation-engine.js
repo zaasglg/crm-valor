@@ -306,7 +306,15 @@ class AutomationEngine {
     console.log(`Sending auto-file to client ${clientId}: ${fileData.name}`);
     if (this.telegramService) {
       try {
-        await this.telegramService.sendFileByPath(clientId, fileData.path, fileData.name, 'automation');
+        // Определяем тип файла
+        const fileType = fileData.type || 'document';
+        
+        if (fileType === 'image') {
+          await this.telegramService.sendImageByPath(clientId, fileData.path, fileData.name, 'automation');
+        } else {
+          await this.telegramService.sendFileByPath(clientId, fileData.path, fileData.name, 'automation');
+        }
+        
         console.log('Auto-file sent successfully');
         
         // Отправляем уведомление в веб-интерфейс
