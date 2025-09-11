@@ -18,8 +18,7 @@
     "name": "Ответ → 2смс",
     "event": "message_received",
     "condition": { 
-      "has_tag": "1смс",
-      "text_not_contains": "/start"
+      "has_tag": "1смс"
     },
     "action": {
       "auto_reply": [
@@ -37,8 +36,7 @@
     "name": "Ответ → регистрация",
     "event": "message_received",
     "condition": { 
-      "has_tag": "2смс",
-      "text_not_contains": "/start"
+      "has_tag": "2смс"
     },
     "action": {
       "auto_reply": [
