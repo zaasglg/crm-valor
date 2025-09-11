@@ -47,6 +47,15 @@ class AutomationEngine {
           }
           break;
 
+        case 'text_not_contains':
+          const textNotContains = (data.message?.text || '').toLowerCase();
+          const excludeKeywords = Array.isArray(value) ? value : [value];
+          if (excludeKeywords.some(keyword => textNotContains.includes(keyword.toLowerCase()))) {
+            console.log(`Text contains excluded keyword: ${value}`);
+            return false;
+          }
+          break;
+
         case 'has_tag':
           let tags = data.tags || [];
           
