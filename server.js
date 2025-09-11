@@ -335,6 +335,8 @@ app.get('/api/clients', async (req, res) => {
       external_id: client.external_id,
       assigned_to: client.assigned_to,
       comment: client.comment,
+      cluster: client.cluster,
+      tags: client.tags,
       created_at: client.created_at,
       messages: []
     }));
@@ -357,6 +359,8 @@ app.get('/api/clients/:id', async (req, res) => {
       external_id: client.external_id,
       assigned_to: client.assigned_to,
       comment: client.comment,
+      cluster: client.cluster,
+      tags: client.tags,
       created_at: client.created_at
     });
   } catch (error) {
