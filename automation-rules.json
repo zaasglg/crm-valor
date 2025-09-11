@@ -19,6 +19,7 @@
     "event": "message_received",
     "condition": { 
       "text_not_contains": "/start",
+      "text_length_min": 1,
       "previous_bot_message_contains": "Quieres saber cómo funciona mi aplicación?"
     },
     "action": {
@@ -37,6 +38,7 @@
     "event": "message_received",
     "condition": { 
       "text_not_contains": "/start",
+      "text_length_min": 1,
       "previous_bot_message_contains": "Listo para empezar?"
     },
     "action": {
