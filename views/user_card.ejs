@@ -43,9 +43,19 @@
                 <span style="color: #6c757d; font-size: 12px;">Теги не назначены</span>
             </div>
             <div style="margin-top: 10px;">
-                <input type="text" id="new-tag-input" placeholder="Добавить тег..." style="width: 70%; padding: 5px; border: 1px solid #ddd; border-radius: 5px; font-size: 12px;">
-                <button onclick="addManualTag()" style="padding: 5px 10px; background: #17a2b8; color: white; border: none; border-radius: 5px; font-size: 12px; margin-left: 5px;">
+                <select id="tag-selector" style="width: 70%; padding: 5px; border: 1px solid #ddd; border-radius: 5px; font-size: 12px;">
+                    <option value="">Выберите тег...</option>
+                    <option value="Прошел регу Колумбия">Прошел регу Колумбия</option>
+                    <option value="custom">Другой...</option>
+                </select>
+                <button onclick="addSelectedTag()" style="padding: 5px 10px; background: #17a2b8; color: white; border: none; border-radius: 5px; font-size: 12px; margin-left: 5px;">
                     <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div id="custom-tag-input" style="margin-top: 10px; display: none;">
+                <input type="text" id="new-tag-input" placeholder="Введите свой тег..." style="width: 70%; padding: 5px; border: 1px solid #ddd; border-radius: 5px; font-size: 12px;">
+                <button onclick="addManualTag()" style="padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 5px; font-size: 12px; margin-left: 5px;">
+                    <i class="fas fa-check"></i>
                 </button>
             </div>
         </div>
@@ -177,5 +187,49 @@
             }
         })
         .catch(err => console.error('Error removing tag:', err));
+    }
+    
+    window.addSelectedTag = function() {
+        const selector = document.getElementById('tag-selector');
+        const selectedValue = selector.value;
+        
+        if (!selectedValue) {
+            alert('Выберите тег');
+            return;
+        }
+        
+        if (selectedValue === 'custom') {
+            // Показываем поле для ввода своего тега
+            document.getElementById('custom-tag-input').style.display = 'block';
+            selector.value = '';
+            return;
+        }
+        
+        const clientId = window.currentClientId;
+        if (!clientId) {
+            alert('Клиент не выбран');
+            return;
+        }
+        
+        // Отправляем запрос на добавление тега
+        fetch('/api/add-tag', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_id: clientId, tag: selectedValue })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                selector.value = '';
+                // Обновляем отображение тегов
+                updateAutomationTagsInSidebar(clientId);
+            } else {
+                alert('Ошибка при добавлении тега');
+            }
+        })
+        .catch(err => {
+            console.error('Error adding tag:', err);
+            alert('Ошибка при добавлении тега');
+        });
     }
     </script>
