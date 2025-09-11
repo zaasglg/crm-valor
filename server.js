@@ -513,6 +513,68 @@ app.delete('/api/automation-rules/:id', (req, res) => {
   }
 });
 
+app.post('/api/add-tag', async (req, res) => {
+  try {
+    const { client_id, tag } = req.body;
+    const client = await Client.findByPk(client_id);
+    if (!client) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+    
+    let tags = client.tags || [];
+    if (typeof tags === 'string') {
+      try {
+        tags = JSON.parse(tags);
+      } catch (e) {
+        tags = [];
+      }
+    }
+    
+    if (!Array.isArray(tags)) {
+      tags = [];
+    }
+    
+    if (!tags.includes(tag)) {
+      tags.push(tag);
+      await client.update({ tags: JSON.stringify(tags) });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/remove-tag', async (req, res) => {
+  try {
+    const { client_id, tag } = req.body;
+    const client = await Client.findByPk(client_id);
+    if (!client) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+    
+    let tags = client.tags || [];
+    if (typeof tags === 'string') {
+      try {
+        tags = JSON.parse(tags);
+      } catch (e) {
+        tags = [];
+      }
+    }
+    
+    if (!Array.isArray(tags)) {
+      tags = [];
+    }
+    
+    tags = tags.filter(t => t !== tag);
+    await client.update({ tags: JSON.stringify(tags) });
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/telegram-webhook', (req, res) => {
   if (telegramService && telegramService.bot) {
     telegramService.bot.processUpdate(req.body);

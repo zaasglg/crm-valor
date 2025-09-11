@@ -648,11 +648,15 @@ function openClientSidebar(clientId) {
             automationTagsContainer.innerHTML = '<span style="color: #6c757d; font-size: 12px;">Теги не назначены</span>';
           } else {
             automationTagsContainer.innerHTML = automationTags.map(tag => 
-              `<span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px; margin-bottom: 3px; display: inline-block;">
+              `<span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px; margin-bottom: 3px; display: inline-block; position: relative;">
                 <i class="fas fa-robot mr-1"></i>${tag}
+                <i class="fas fa-times" onclick="removeManualTag('${tag}')" style="margin-left: 5px; cursor: pointer; opacity: 0.7;" title="Удалить тег"></i>
               </span>`
             ).join('');
           }
+          
+          // Сохраняем ID клиента для функций добавления/удаления тегов
+          window.currentClientId = clientId;
           
           const avatar = document.getElementById('modal-user-avatar');
           avatar.textContent = (client.name || 'U').charAt(0).toUpperCase();
