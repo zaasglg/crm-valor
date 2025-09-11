@@ -163,21 +163,35 @@ class AutomationEngine {
           currentTags = [];
         }
         const newTags = [...new Set([...currentTags, ...tags])];
+        console.log(`Before update - current: [${currentTags.join(', ')}], adding: [${tags.join(', ')}], result: [${newTags.join(', ')}]`);
         await client.update({ tags: JSON.stringify(newTags) });
         console.log(`Tags updated for client ${clientId}:`, newTags);
         
-        // Отправляем системное сообщение в чат
-        if (this.telegramService && this.telegramService.io) {
-          this.telegramService.io.emit('system_message', {
-            client_id: clientId,
-            client_name: client.name,
-            message: {
-              id: Date.now(),
+        // Сохраняем системное сообщение в базу данных
+        if (this.telegramService) {
+          try {
+            const { Message } = require('./models');
+            const systemMessage = await Message.create({
+              client_id: clientId,
               text: `Система присвоила клиенту теги: "${tags.join(', ')}".`,
               direction: 'system',
-              created_at: new Date().toISOString()
-            }
-          });
+              operator: 'automation'
+            });
+            
+            // Отправляем через socket
+            this.telegramService.io.emit('system_message', {
+              client_id: clientId,
+              client_name: client.name,
+              message: {
+                id: systemMessage.id,
+                text: systemMessage.text,
+                direction: 'system',
+                created_at: systemMessage.created_at
+              }
+            });
+          } catch (error) {
+            console.error('Error saving system message:', error);
+          }
         }
       }
     } catch (error) {
@@ -208,18 +222,31 @@ class AutomationEngine {
         await client.update({ tags: JSON.stringify(newTags) });
         console.log(`Tags updated for client ${clientId}:`, newTags);
         
-        // Отправляем системное сообщение в чат
-        if (this.telegramService && this.telegramService.io) {
-          this.telegramService.io.emit('system_message', {
-            client_id: clientId,
-            client_name: client.name,
-            message: {
-              id: Date.now(),
+        // Сохраняем системное сообщение в базу данных
+        if (this.telegramService) {
+          try {
+            const { Message } = require('./models');
+            const systemMessage = await Message.create({
+              client_id: clientId,
               text: `Система удалила у клиента теги: "${tags.join(', ')}".`,
               direction: 'system',
-              created_at: new Date().toISOString()
-            }
-          });
+              operator: 'automation'
+            });
+            
+            // Отправляем через socket
+            this.telegramService.io.emit('system_message', {
+              client_id: clientId,
+              client_name: client.name,
+              message: {
+                id: systemMessage.id,
+                text: systemMessage.text,
+                direction: 'system',
+                created_at: systemMessage.created_at
+              }
+            });
+          } catch (error) {
+            console.error('Error saving system message:', error);
+          }
         }
       }
     } catch (error) {
