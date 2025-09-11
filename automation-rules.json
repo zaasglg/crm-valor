@@ -36,9 +36,12 @@
       "auto_reply": [
         { "text": "Para empezar, necesitas registrarte en ValorBet.", "delay": 0 },
         { "text": "Aquí tienes el enlace de registro: 👉🏻 https://valor-games.com 👈🏻. Haz clic en él и регистрируйся с tu correo electrónico.", "delay": 2000 },
-        { "text": "Necesito asegurarme de que te hayas registrado correctamente. Para ello, necesito ver tu identificación en la página web del казино ValorBet. Por favor, envíame una captura de pantalla с tu número de cuenta.", "delay": 2000 },
-        { "text": "После того как пришлешь скрин, дам приложение для теста.", "delay": 2000 }
+        { "text": "Necesito asegurarme de que te hayas registrado correctamente. Para ello, necesito ver tu identificación en la página web del казино ValorBet. Por favor, envíame una captura de pantalla с tu número de cuenta.", "delay": 2000 }
       ],
+      "send_file": {
+        "path": "./uploads/first_photo.JPG",
+        "name": "first_photo.JPG"
+      },
       "remove_tag": "2смс",
       "add_tag": "регистрация"
     }
