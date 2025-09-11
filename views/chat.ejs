@@ -724,9 +724,11 @@ fetch('/api/clients')
           try {
             if (client.tags) {
               if (typeof client.tags === 'string') {
-                client.parsedTags = JSON.parse(client.tags);
+                const parsed = JSON.parse(client.tags);
+                // Фильтруем только строки длиннее 1 символа
+                client.parsedTags = Array.isArray(parsed) ? parsed.filter(tag => typeof tag === 'string' && tag.length > 1) : [];
               } else if (Array.isArray(client.tags)) {
-                client.parsedTags = client.tags;
+                client.parsedTags = client.tags.filter(tag => typeof tag === 'string' && tag.length > 1);
               } else {
                 client.parsedTags = [];
               }
