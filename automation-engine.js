@@ -122,14 +122,28 @@ class AutomationEngine {
     console.log(`Removing tags ${tags.join(', ')} from client ${clientId}`);
   }
 
-  async sendAutoReply(clientId, message) {
-    console.log(`Sending auto-reply to client ${clientId}: ${message}`);
-    if (this.telegramService) {
-      try {
-        await this.telegramService.sendMessage(clientId, message, 'automation');
-        console.log('Auto-reply sent successfully');
-      } catch (error) {
-        console.error('Error sending auto-reply:', error);
+  async sendAutoReply(clientId, messages) {
+    // Поддержка как строки, так и массива сообщений с задержками
+    const messageArray = Array.isArray(messages) ? messages : [{ text: messages, delay: 0 }];
+    
+    for (const messageObj of messageArray) {
+      const message = typeof messageObj === 'string' ? messageObj : messageObj.text;
+      const delay = typeof messageObj === 'object' ? messageObj.delay || 0 : 0;
+      
+      // Задержка перед отправкой
+      if (delay > 0) {
+        console.log(`Waiting ${delay}ms before sending message...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
+      console.log(`Sending auto-reply to client ${clientId}: ${message}`);
+      if (this.telegramService) {
+        try {
+          await this.telegramService.sendMessage(clientId, message, 'automation');
+          console.log('Auto-reply sent successfully');
+        } catch (error) {
+          console.error('Error sending auto-reply:', error);
+        }
       }
     }
   }
