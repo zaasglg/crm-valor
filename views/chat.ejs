@@ -112,7 +112,7 @@
           <!-- Фильтры чатов -->
           <div class="chat-filters mb-3">
             <div class="btn-group-vertical w-100" role="group">
-              <button type="button" class="btn btn-sm btn-outline-primary active" data-filter="all">
+              <button type="button" class="btn btn-sm btn-outline-primary" data-filter="all">
                 <i class="fas fa-comments mr-1"></i> Все чаты
               </button>
               <button type="button" class="btn btn-sm btn-outline-info" data-filter="new">
@@ -222,7 +222,7 @@ let currentClientId = null;
 let clients = {};
 let allClients = {};
 let unreadCounts = {};
-let currentFilter = 'all';
+let currentFilter = null;
 let currentStatus = null;
 
 // Socket events
@@ -769,7 +769,7 @@ function applyFilters() {
     }
     
     // Фильтр по типу
-    if (show && currentFilter !== 'all') {
+    if (show && currentFilter) {
       if (currentFilter === 'new' && client?.assigned_to) {
         show = false;
       }
