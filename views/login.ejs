@@ -69,8 +69,11 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     
     if (data.success) {
       localStorage.setItem('user', JSON.stringify(data.user));
+      // Все роли могут войти в систему
       if (data.user.role === 'admin') {
         window.location.href = '/admin/dashboard';
+      } else if (data.user.role === 'fd_manager' || data.user.role === 'rd_manager') {
+        window.location.href = '/';
       } else {
         window.location.href = '/';
       }

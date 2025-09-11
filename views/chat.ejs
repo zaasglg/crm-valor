@@ -10,9 +10,12 @@
   <style>
     .chat-container { height: calc(100vh - 56px); display: flex; }
     .clients-sidebar { height: 100%; overflow-y: auto; }
-    .client-item { padding: 15px; border-bottom: 1px solid #dee2e6; cursor: pointer; transition: all 0.3s ease; }
+    .client-item { padding: 15px; border-bottom: 1px solid #dee2e6; cursor: pointer; transition: all 0.3s ease; position: relative; }
     .client-item:hover { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); transform: translateX(5px); }
     .client-item.active { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; box-shadow: 0 4px 15px rgba(0,123,255,0.3); }
+    .client-item.unread { background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border-left: 4px solid #ffc107; }
+    .client-item.unread .client-info h6 { font-weight: 700; }
+    .unread-badge { position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
     .client-avatar { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     .client-info h6 { margin: 0; font-size: 14px; font-weight: 600; }
     .client-info small { color: #6c757d; font-size: 12px; }
@@ -175,21 +178,34 @@ if (!user) {
 
 // Отображение пользователя
 document.getElementById('username-display').textContent = user.username;
+// Только админы видят ссылку на админку
 if (user.role === 'admin') {
   document.getElementById('admin-link').style.display = 'block';
   document.getElementById('admin-divider').style.display = 'block';
+} else {
+  document.getElementById('admin-link').style.display = 'none';
+  document.getElementById('admin-divider').style.display = 'none';
 }
 
 const socket = io();
 let currentClientId = null;
 let clients = {};
 let allClients = {};
+let unreadCounts = {};
 
 // Socket events
 socket.on('new_message', (data) => {
-  const hasAccess = user.role === 'admin' || 
-                   data.client_assigned_to === user.username || 
-                   !data.client_assigned_to;
+  let hasAccess = false;
+  
+  if (user.role === 'admin') {
+    hasAccess = true;
+  } else if (user.role === 'fd_manager') {
+    // ФД видит все новые чаты и свои назначенные
+    hasAccess = !data.client_assigned_to || data.client_assigned_to === user.username;
+  } else if (user.role === 'rd_manager') {
+    // РД видит только чаты назначенные ему
+    hasAccess = data.client_assigned_to === user.username;
+  }
   
   if (!hasAccess) return;
   
@@ -209,19 +225,33 @@ socket.on('new_message', (data) => {
   
   clients[data.client_id].messages.push(data.message);
   
+  // Увеличиваем счетчик непрочитанных, если чат не активен и сообщение входящее
+  if (currentClientId !== data.client_id && data.message.direction === 'in') {
+    unreadCounts[data.client_id] = (unreadCounts[data.client_id] || 0) + 1;
+  }
+  
   if (currentClientId === data.client_id) {
     renderMessages();
   }
   
   // Обновляем превью последнего сообщения
   updateClientPreview(data.client_id, data.message);
+  renderClients();
 });
 
 // Обработка системных сообщений
 socket.on('system_message', (data) => {
-  const hasAccess = user.role === 'admin' || 
-                   clients[data.client_id]?.assigned_to === user.username || 
-                   !clients[data.client_id]?.assigned_to;
+  let hasAccess = false;
+  
+  if (user.role === 'admin') {
+    hasAccess = true;
+  } else if (user.role === 'fd_manager') {
+    // ФД видит все новые чаты и свои назначенные
+    hasAccess = !clients[data.client_id]?.assigned_to || clients[data.client_id]?.assigned_to === user.username;
+  } else if (user.role === 'rd_manager') {
+    // РД видит только чаты назначенные ему
+    hasAccess = clients[data.client_id]?.assigned_to === user.username;
+  }
   
   if (!hasAccess) return;
   
@@ -250,6 +280,9 @@ socket.on('system_message', (data) => {
 function selectClient(clientId) {
   currentClientId = clientId;
   
+  // Сбрасываем счетчик непрочитанных
+  unreadCounts[clientId] = 0;
+  
   // Обновляем активный элемент
   document.querySelectorAll('.client-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`[data-client-id="${clientId}"]`)?.classList.add('active');
@@ -257,6 +290,7 @@ function selectClient(clientId) {
   // Показываем чат
   showChatArea(clientId);
   loadMessages(clientId);
+  renderClients();
 }
 
 function showChatArea(clientId) {
@@ -370,25 +404,31 @@ function renderClients() {
   const container = document.getElementById('clients-list');
   const clientsList = Object.values(clients);
   
-  container.innerHTML = clientsList.map(client => `
-    <div class="client-item" data-client-id="${client.id}" onclick="selectClient(${client.id})">
-      <div class="d-flex align-items-center">
-        <div class="client-avatar">
-          ${(client.name || 'U').charAt(0).toUpperCase()}
-        </div>
-        <div class="client-info flex-grow-1">
-          <h6>${client.name || 'Неизвестный клиент'}</h6>
-          <small>
-            Telegram ${client.assigned_to ? '• ' + client.assigned_to : ''}
-          </small>
-          <div class="clusters-display" style="margin-top: 5px;">
-            ${getClientClustersHTML(client)}
+  container.innerHTML = clientsList.map(client => {
+    const unreadCount = unreadCounts[client.id] || 0;
+    const isUnread = unreadCount > 0;
+    
+    return `
+      <div class="client-item ${isUnread ? 'unread' : ''}" data-client-id="${client.id}" onclick="selectClient(${client.id})">
+        <div class="d-flex align-items-center">
+          <div class="client-avatar">
+            ${(client.name || 'U').charAt(0).toUpperCase()}
           </div>
-          <div class="last-message" id="preview-${client.id}"></div>
+          <div class="client-info flex-grow-1">
+            <h6>${client.name || 'Неизвестный клиент'}</h6>
+            <small>
+              Telegram ${client.assigned_to ? '• ' + client.assigned_to : ''}
+            </small>
+            <div class="clusters-display" style="margin-top: 5px;">
+              ${getClientClustersHTML(client)}
+            </div>
+            <div class="last-message" id="preview-${client.id}"></div>
+          </div>
+          ${isUnread ? `<div class="unread-badge">${unreadCount > 99 ? '99+' : unreadCount}</div>` : ''}
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function updateClientPreview(clientId, message) {
@@ -640,9 +680,19 @@ fetch('/api/clients')
     if (Array.isArray(data)) {
       data.forEach(client => {
         allClients[client.id] = client;
-        if (user.role === 'admin' || 
-            client.assigned_to === user.username || 
-            !client.assigned_to) {
+        
+        let hasAccess = false;
+        if (user.role === 'admin') {
+          hasAccess = true;
+        } else if (user.role === 'fd_manager') {
+          // ФД видит все новые чаты и свои назначенные
+          hasAccess = !client.assigned_to || client.assigned_to === user.username;
+        } else if (user.role === 'rd_manager') {
+          // РД видит только чаты назначенные ему
+          hasAccess = client.assigned_to === user.username;
+        }
+        
+        if (hasAccess) {
           // Парсим кластеры при загрузке
           try {
             if (client.cluster && typeof client.cluster === 'string') {
