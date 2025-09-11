@@ -137,6 +137,10 @@ class AutomationEngine {
           await this.sendAutoFile(data.clientId, value);
           break;
 
+        case 'auto_reply_after_file':
+          await this.sendAutoReply(data.clientId, value);
+          break;
+
         case 'assign_to_queue':
           await this.assignToQueue(data.clientId, value);
           break;

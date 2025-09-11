@@ -49,6 +49,9 @@
         "name": "first_photo.JPG",
         "type": "image"
       },
+      "auto_reply_after_file": [
+        { "text": "Después de que me envíes una captura de pantalla con tu identificación, te daré mi aplicación para que puedas probarla.", "delay": 2000 }
+      ],
       "remove_tag": "2смс",
       "add_tag": "регистрация"
     }
