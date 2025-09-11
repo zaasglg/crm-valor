@@ -403,7 +403,7 @@ function updateClientTagsInList(clientId) {
 }
 
 // Функции для работы с тегами
-window.addSelectedTag = function() {
+function addSelectedTag() {
   const selector = document.getElementById('tag-selector');
   const selectedValue = selector.value;
   
@@ -441,9 +441,9 @@ window.addSelectedTag = function() {
     console.error('Error adding tag:', err);
     alert('Ошибка при добавлении тега');
   });
-};
+}
 
-window.addManualTag = function() {
+function addManualTag() {
   const input = document.getElementById('new-tag-input');
   const tagText = input.value.trim();
   
@@ -476,9 +476,9 @@ window.addManualTag = function() {
     console.error('Error adding tag:', err);
     alert('Ошибка при добавлении тега');
   });
-};
+}
 
-window.removeManualTag = function(tag) {
+function removeManualTag(tag) {
   if (!currentClientId) return;
   
   fetch('/api/remove-tag', {
@@ -493,7 +493,7 @@ window.removeManualTag = function(tag) {
     }
   })
   .catch(err => console.error('Error removing tag:', err));
-};
+}
 
 
 
