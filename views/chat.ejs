@@ -507,6 +507,25 @@ function openClientSidebar(clientId) {
           console.log('Loading clusters for client:', client.id, clusters);
           window.setClientClusters(clusters);
           
+          // Загружаем теги автоматизации
+          let automationTags = [];
+          try {
+            automationTags = client.tags ? (Array.isArray(client.tags) ? client.tags : JSON.parse(client.tags)) : [];
+          } catch (e) {
+            automationTags = [];
+          }
+          
+          const automationTagsContainer = document.getElementById('automation-tags');
+          if (automationTags.length === 0) {
+            automationTagsContainer.innerHTML = '<span style="color: #6c757d; font-size: 12px;">Теги не назначены</span>';
+          } else {
+            automationTagsContainer.innerHTML = automationTags.map(tag => 
+              `<span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px; margin-bottom: 3px; display: inline-block;">
+                <i class="fas fa-robot mr-1"></i>${tag}
+              </span>`
+            ).join('');
+          }
+          
           const avatar = document.getElementById('modal-user-avatar');
           avatar.textContent = (client.name || 'U').charAt(0).toUpperCase();
         }
