@@ -58,7 +58,7 @@
   },
   {
     "id": "step4_demo_app",
-    "name": "Прошел регу → демо приложение",
+    "name": "Прошел регу Колумбия → демо приложение",
     "event": "message_received",
     "condition": { "has_tag": "Прошел регу Колумбия" },
     "action": {
