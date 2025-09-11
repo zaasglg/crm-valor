@@ -110,6 +110,17 @@ class AutomationEngine {
             return false;
           }
           break;
+
+        case 'tag_added':
+          const addedTag = data.tag_added;
+          const requiredTag = value;
+          console.log(`Checking tag_added: added "${addedTag}", required "${requiredTag}"`);
+          if (addedTag !== requiredTag) {
+            console.log('Tag added condition not met');
+            return false;
+          }
+          console.log('Tag added condition met');
+          break;
       }
     }
 
@@ -122,6 +133,15 @@ class AutomationEngine {
         case 'add_tag':
           const tagsToAdd = Array.isArray(value) ? value : [value];
           await this.addTags(data.clientId, tagsToAdd);
+          // Запускаем проверку правил на событие tag_added
+          for (const tag of tagsToAdd) {
+            await this.processEvent('tag_added', {
+              clientId: data.clientId,
+              tag_added: tag,
+              tags: data.tags,
+              client: data.client
+            });
+          }
           break;
 
         case 'remove_tag':

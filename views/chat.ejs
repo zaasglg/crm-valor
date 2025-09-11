@@ -515,6 +515,50 @@ function removeManualTag(tag) {
   .catch(err => console.error('Error removing tag:', err));
 }
 
+function transferToRD() {
+  if (!currentClientId) {
+    alert('Клиент не выбран');
+    return;
+  }
+  
+  if (user.role !== 'fd_manager') {
+    alert('Только FD менеджер может передавать клиентов');
+    return;
+  }
+  
+  if (confirm('Передать клиента RD менеджеру и добавить тег "переход к полной версии"?')) {
+    Promise.all([
+      // Назначаем RD менеджера
+      fetch('/api/assign-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: currentClientId, assigned_to: 'rd1' })
+      }),
+      // Добавляем тег для запуска автоматизации
+      fetch('/api/add-tag', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: currentClientId, tag: 'переход к полной версии' })
+      })
+    ])
+    .then(responses => Promise.all(responses.map(r => r.json())))
+    .then(results => {
+      if (results.every(r => r.success)) {
+        alert('Клиент успешно передан RD менеджеру');
+        closeClientSidebar();
+        // Обновляем список клиентов
+        location.reload();
+      } else {
+        alert('Ошибка при передаче клиента');
+      }
+    })
+    .catch(err => {
+      console.error('Error transferring client:', err);
+      alert('Ошибка при передаче клиента');
+    });
+  }
+}
+
 
 
 function selectClient(clientId) {

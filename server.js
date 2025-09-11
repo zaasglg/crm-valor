@@ -575,6 +575,21 @@ app.post('/api/remove-tag', async (req, res) => {
   }
 });
 
+app.post('/api/assign-client', async (req, res) => {
+  try {
+    const { client_id, assigned_to } = req.body;
+    const client = await Client.findByPk(client_id);
+    if (!client) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+    
+    await client.update({ assigned_to });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/telegram-webhook', (req, res) => {
   if (telegramService && telegramService.bot) {
     telegramService.bot.processUpdate(req.body);

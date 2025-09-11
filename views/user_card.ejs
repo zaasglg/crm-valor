@@ -31,10 +31,17 @@
             <div id="automation-tags" style="margin: 10px 0; min-height: 30px;">
                 <span style="color: #6c757d; font-size: 12px;">Теги не назначены</span>
             </div>
+        </div>
+        <div class="info-item" style="flex-direction: column; align-items: flex-start;">
+            <span class="info-item-label">Ручные теги:</span>
+            <div id="manual-tags" style="margin: 10px 0; min-height: 30px;">
+                <span style="color: #6c757d; font-size: 12px;">Ручные теги не добавлены</span>
+            </div>
             <div style="margin-top: 10px;">
                 <select id="tag-selector" style="width: 70%; padding: 5px; border: 1px solid #ddd; border-radius: 5px; font-size: 12px;">
                     <option value="">Выберите тег...</option>
-                    <option value="Прошел регу Колумбия">Прошел регу Колумбия</option>
+                    <option value="Прошел регу">Прошел регу</option>
+                    <option value="Колумбия">Колумбия</option>
                     <option value="custom">Другой...</option>
                 </select>
                 <button onclick="addSelectedTag()" style="padding: 5px 10px; background: #17a2b8; color: white; border: none; border-radius: 5px; font-size: 12px; margin-left: 5px;">
@@ -55,6 +62,9 @@
         <textarea id="modal-user-comment" placeholder="Добавьте комментарий к пользователю..." style="width: 100%; min-height: 100px; padding: 15px; border: 2px solid #e9ecef; border-radius: 15px; resize: vertical; font-size: 14px; transition: border-color 0.3s ease; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);"></textarea>
         <button onclick="saveClientData()" class="btn-save" style="margin-top: 15px; width: 100%;">
           <i class="fas fa-save"></i> Сохранить данные
+        </button>
+        <button onclick="transferToRD()" class="btn" style="margin-top: 10px; width: 100%; background: #ffc107; color: #212529; border: none; padding: 12px 25px; border-radius: 25px; font-weight: 600;">
+          <i class="fas fa-arrow-right"></i> Передать RD менеджеру
         </button>
     </div>
     
