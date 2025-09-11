@@ -120,10 +120,36 @@ class AutomationEngine {
       const { Client } = require('./models');
       const client = await Client.findByPk(clientId);
       if (client) {
-        const currentTags = client.tags || [];
+        let currentTags = client.tags || [];
+        // Проверяем, если tags это строка, парсим её
+        if (typeof currentTags === 'string') {
+          try {
+            currentTags = JSON.parse(currentTags);
+          } catch (e) {
+            currentTags = [];
+          }
+        }
+        // Убеждаемся что это массив
+        if (!Array.isArray(currentTags)) {
+          currentTags = [];
+        }
         const newTags = [...new Set([...currentTags, ...tags])];
         await client.update({ tags: newTags });
         console.log(`Tags updated for client ${clientId}:`, newTags);
+        
+        // Отправляем системное сообщение в чат
+        if (this.telegramService && this.telegramService.io) {
+          this.telegramService.io.emit('system_message', {
+            client_id: clientId,
+            client_name: client.name,
+            message: {
+              id: Date.now(),
+              text: `Система присвоила клиенту теги: "${tags.join(', ')}".`,
+              direction: 'system',
+              created_at: new Date().toISOString()
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('Error adding tags:', error);
@@ -136,10 +162,36 @@ class AutomationEngine {
       const { Client } = require('./models');
       const client = await Client.findByPk(clientId);
       if (client) {
-        const currentTags = client.tags || [];
+        let currentTags = client.tags || [];
+        // Проверяем, если tags это строка, парсим её
+        if (typeof currentTags === 'string') {
+          try {
+            currentTags = JSON.parse(currentTags);
+          } catch (e) {
+            currentTags = [];
+          }
+        }
+        // Убеждаемся что это массив
+        if (!Array.isArray(currentTags)) {
+          currentTags = [];
+        }
         const newTags = currentTags.filter(tag => !tags.includes(tag));
         await client.update({ tags: newTags });
         console.log(`Tags updated for client ${clientId}:`, newTags);
+        
+        // Отправляем системное сообщение в чат
+        if (this.telegramService && this.telegramService.io) {
+          this.telegramService.io.emit('system_message', {
+            client_id: clientId,
+            client_name: client.name,
+            message: {
+              id: Date.now(),
+              text: `Система удалила у клиента теги: "${tags.join(', ')}".`,
+              direction: 'system',
+              created_at: new Date().toISOString()
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('Error removing tags:', error);
@@ -165,6 +217,19 @@ class AutomationEngine {
         try {
           await this.telegramService.sendMessage(clientId, message, 'automation');
           console.log('Auto-reply sent successfully');
+          
+          // Отправляем уведомление в веб-интерфейс
+          const { Client } = require('./models');
+          const client = await Client.findByPk(clientId);
+          if (client && this.telegramService.io) {
+            this.telegramService.io.emit('automation_notification', {
+              client_id: clientId,
+              client_name: client.name,
+              action: 'auto_reply',
+              message: `Отправлено автосообщение: ${message.substring(0, 50)}...`,
+              timestamp: new Date().toISOString()
+            });
+          }
         } catch (error) {
           console.error('Error sending auto-reply:', error);
         }
@@ -178,6 +243,19 @@ class AutomationEngine {
       try {
         await this.telegramService.sendFileByPath(clientId, fileData.path, fileData.name, 'automation');
         console.log('Auto-file sent successfully');
+        
+        // Отправляем уведомление в веб-интерфейс
+        const { Client } = require('./models');
+        const client = await Client.findByPk(clientId);
+        if (client && this.telegramService.io) {
+          this.telegramService.io.emit('automation_notification', {
+            client_id: clientId,
+            client_name: client.name,
+            action: 'send_file',
+            message: `Отправлен файл: ${fileData.name}`,
+            timestamp: new Date().toISOString()
+          });
+        }
       } catch (error) {
         console.error('Error sending auto-file:', error);
       }

@@ -217,15 +217,32 @@ socket.on('new_message', (data) => {
   updateClientPreview(data.client_id, data.message);
 });
 
-// Обработка уведомлений автоматизации
-socket.on('automation_notification', (data) => {
+// Обработка системных сообщений
+socket.on('system_message', (data) => {
   const hasAccess = user.role === 'admin' || 
                    clients[data.client_id]?.assigned_to === user.username || 
                    !clients[data.client_id]?.assigned_to;
   
   if (!hasAccess) return;
   
-  showAutomationNotification(data);
+  // Добавляем системное сообщение в чат
+  if (!clients[data.client_id]) {
+    clients[data.client_id] = { 
+      id: data.client_id, 
+      name: data.client_name,
+      messages: [] 
+    };
+  }
+  
+  if (!clients[data.client_id].messages) {
+    clients[data.client_id].messages = [];
+  }
+  
+  clients[data.client_id].messages.push(data.message);
+  
+  if (currentClientId === data.client_id) {
+    renderMessages();
+  }
 });
 
 function showAutomationNotification(data) {
@@ -358,6 +375,18 @@ function renderMessages() {
       content += `<br><a href="${msg.file_url}" target="_blank" class="text-decoration-none">
         <i class="fas fa-file"></i> ${msg.file_name}
       </a>`;
+    }
+    
+    if (msg.direction === 'system') {
+      return `
+        <div class="message system" style="justify-content: center; margin: 10px 0;">
+          <div class="system-message" style="background: #f8f9fa; color: #6c757d; padding: 8px 15px; border-radius: 15px; font-size: 12px; border: 1px solid #dee2e6; max-width: 80%; text-align: center;">
+            <i class="fas fa-info-circle mr-1"></i>
+            ${msg.text}
+            <div style="font-size: 10px; margin-top: 3px; opacity: 0.7;">${new Date(msg.created_at).toLocaleString()}</div>
+          </div>
+        </div>
+      `;
     }
     
     return `
