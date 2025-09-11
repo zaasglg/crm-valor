@@ -6,22 +6,8 @@
     "condition": { "text_contains": "/start" },
     "action": {
       "auto_reply": [
-        "Hola! Me llamo César Gómez y me complace presentarte una oportunidad única que podría cambiar tu vida. Te has preguntado alguna vez cómo algunos jugadores ganan constantemente en Chicken Road? No es suerte, sino el resultado de usar tecnología avanzada! Mi aplicación utiliza algoritmos complejos para analizar datos y predecir los resultados de las apuestas.",
-        "Quieres saber cómo funciona mi aplicación?"
-      ],
-      "add_tag": "1смс"
-    },
-    "stop_funnel_until_reply": true
-  },
-  {
-    "id": "step1_start",
-    "name": "Старт → 1смс",
-    "event": "chat_opened",
-    "condition": {},
-    "action": {
-      "auto_reply": [
-        "Hola! Me llamo César Gómez y me complace presentarte una oportunidad única que podría cambiar tu vida. Te has preguntado alguna vez cómo algunos jugadores ganan constantemente en Chicken Road? No es suerte, sino el resultado de usar tecnología avanzada! Mi aplicación utiliza algoritmos complejos para analizar datos y predecir los resultados de las apuestas.",
-        "Quieres saber cómo funciona mi aplicación?"
+        { "text": "Hola! Me llamo César Gómez y me complace presentarte una oportunidad única que podría cambiar tu vida. Te has preguntado alguna vez cómo algunos jugadores ganan constantemente en Chicken Road? No es suerte, sino el resultado de usar tecnología avanzada! Mi aplicación utiliza algoritmos complejos para analizar datos y predecir los resultados de las apuestas.", "delay": 0 },
+        { "text": "Quieres saber cómo funciona mi aplicación?", "delay": 2000 }
       ],
       "add_tag": "1смс"
     },
@@ -34,9 +20,9 @@
     "condition": { "has_tag": "1смс" },
     "action": {
       "auto_reply": [
-        "He desarrollado un método único que te ayudará a ganar dinero con mi app! 💰 Hoy puedes obtener una ganancia de 29,254,482 pesos.",
-        "Además, después de registrarte, te proporcionaré una demo para que puedas comprobar su eficacia. No pierdas la oportunidad de cambiar tu vida para mejor!",
-        "Listo para empezar?"
+        { "text": "He desarrollado un método único que te ayudará a ganar dinero con mi app! 💰 Hoy puedes obtener una ganancia de 29,254,482 pesos.", "delay": 0 },
+        { "text": "Además, después de registrarte, te proporcionaré una demo para que puedas comprobar su eficacia. No pierdas la oportunidad de cambiar tu vida para mejor!", "delay": 2000 },
+        { "text": "Listo para empezar?", "delay": 2000 }
       ],
       "remove_tag": "1смс",
       "add_tag": "2смс"
@@ -50,36 +36,14 @@
     "condition": { "has_tag": "2смс" },
     "action": {
       "auto_reply": [
-        "Para empezar, necesitas registrarte en ValorBet. Aquí tienes el enlace de registro: 👉🏻 https://valor-games.com 👈🏻. Haz clic en él y regístrate con tu correo electrónico",
-        "Necesito asegurarme de que te hayas registrado correctamente. Para ello, necesito ver tu identificación en la página web del casino ValorBet. Por favor, envíame una captura de pantalla con tu número de cuenta.",
-        "Después de que me envíes una captura de pantalla con tu identificación, te daré mi aplicación para que puedas probarla."
+        { "text": "Para empezar, necesitas registrarte en ValorBet.", "delay": 0 },
+        { "text": "Aquí tienes el enlace de registro: 👉🏻 https://valor-games.com 👈🏻. Haz clic en él y regístrate con tu correo electrónico.", "delay": 2000 },
+        { "text": "Necesito asegurarme de que te hayas registrado correctamente. Para ello, necesito ver tu identificación en la página web del casino ValorBet. Por favor, envíame una captura de pantalla с tu número de cuenta.", "delay": 2000 },
+        { "text": "После того как пришлешь скрин, дам приложение для теста.", "delay": 2000 }
       ],
       "remove_tag": "2смс",
       "add_tag": "регистрация"
     },
     "stop_funnel_until_reply": true
-  },
-  {
-    "id": "step4_demo",
-    "name": "Прошел регу Колумбия → демо",
-    "event": "message_received",
-    "condition": { "has_tag": "Прошел регу Колумбия" },
-    "action": {
-      "auto_reply": [
-        "Me alegra saber que ya está listo para obtener la aplicación de demostración. Espero que aprecie sus funciones и compruebe su eficacia para predecir apuestas en el juego Chicken Road. 🤖Aquí tiene un enlace a la aplicación de demostración🤖 ССЫЛКА НА ХАК БОТА",
-        "Después de probar la aplicación de demostración, escríbeme si todo salió bien! De acuerdo? 💸"
-      ]
-    }
-  },
-  {
-    "id": "step5_transfer",
-    "name": "Переходная воронка (от фд к рд менеджеру)",
-    "event": "message_received",
-    "condition": { "has_tag": "Передать менеджеру" },
-    "action": {
-      "auto_reply": [
-        "Su aplicación se ha activado correctamente y está lista para usar. Puede acceder a ella a través del siguiente enlace:ССылка на хак бота. Tenga en cuenta que el servicio de seguridad del casino puede rastrearlo a usted y a su aplicación. Por lo tanto, solo se permiten retiros tras alcanzar un saldo mínimo de 29.500.000 pesos. 🔒Por qué se hace esto? Esto simula el crecimiento orgánico de la cuenta para no despertar sospechas en el sistema. ✅ Qué hacer: Sigue jugando según las instrucciones y no te desvíes de la estrategia del bot. En cuanto alcances la cantidad requerida, avísame y te ayudaré a retirar tus ganancias.💪🏆"
-      ]
-    }
   }
 ]
