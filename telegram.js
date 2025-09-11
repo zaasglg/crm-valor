@@ -157,9 +157,8 @@ class TelegramService {
       console.log('Emitting to clients:', JSON.stringify(emitData, null, 2));
       this.io.emit('new_message', emitData);
       
-      // Получаем клиента с актуальными тегами (перезагружаем из БД)
-      await client.reload();
-      const clientData = client;
+      // Получаем клиента с актуальными тегами заново из БД
+      const clientData = await Client.findByPk(client.id);
       let clientTags = clientData && clientData.tags ? clientData.tags : [];
       
       // Проверяем и парсим теги если они строка
