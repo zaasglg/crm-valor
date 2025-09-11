@@ -1,5 +1,19 @@
 [
   {
+    "id": "step1_start_message",
+    "name": "Старт по /start",
+    "event": "message_received",
+    "condition": { "text_contains": "/start" },
+    "action": {
+      "auto_reply": [
+        "Hola! Me llamo César Gómez y me complace presentarte una oportunidad única que podría cambiar tu vida. Te has preguntado alguna vez cómo algunos jugadores ganan constantemente en Chicken Road? No es suerte, sino el resultado de usar tecnología avanzada! Mi aplicación utiliza algoritmos complejos para analizar datos y predecir los resultados de las apuestas.",
+        "Quieres saber cómo funciona mi aplicación?"
+      ],
+      "add_tag": "1смс"
+    },
+    "stop_funnel_until_reply": true
+  },
+  {
     "id": "step1_start",
     "name": "Старт → 1смс",
     "event": "chat_opened",
