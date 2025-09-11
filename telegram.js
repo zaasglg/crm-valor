@@ -159,6 +159,7 @@ class TelegramService {
       
       // Получаем клиента с актуальными тегами заново из БД
       const clientData = await Client.findByPk(client.id);
+      console.log(`Raw tags from DB for client ${client.id}:`, clientData?.tags, typeof clientData?.tags);
       let clientTags = clientData && clientData.tags ? clientData.tags : [];
       
       // Проверяем и парсим теги если они строка
