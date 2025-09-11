@@ -14,9 +14,13 @@
     .client-item:hover { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); transform: translateX(5px); }
     .client-item.active { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; box-shadow: 0 4px 15px rgba(0,123,255,0.3); }
     .client-avatar { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .client-info h6 { margin: 0; font-size: 14px; font-weight: 600; color: #ffffff; }
-    .client-info small { color: #e9ecef; font-size: 12px; }
+    .client-info h6 { margin: 0; font-size: 14px; font-weight: 600; }
+    .client-info small { color: #6c757d; font-size: 12px; }
+    .client-item.active .client-info h6 { color: #ffffff; }
     .client-item.active .client-info small { color: rgba(255,255,255,0.9); }
+    .clusters-display { margin-top: 5px; }
+    .clusters-display span { display: inline-block !important; margin-right: 3px !important; }
+    .client-item.active .clusters-display span { opacity: 0.9; }
     .chat-main { flex: 1; display: flex; flex-direction: column; }
     .chat-area { flex: 1; display: flex; flex-direction: column; }
     .chat-header { position: sticky; top: 0; z-index: 100; padding: 20px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border-bottom: 1px solid #dee2e6; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
