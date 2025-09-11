@@ -42,6 +42,9 @@
         "path": "./uploads/first_photo.JPG",
         "name": "first_photo.JPG"
       },
+       "auto_reply": [
+        { "text": "-----------------------------------", "delay": 0 }
+      ],
       "remove_tag": "2смс",
       "add_tag": "регистрация"
     }
