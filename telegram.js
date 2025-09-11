@@ -162,18 +162,25 @@ class TelegramService {
       console.log(`Raw tags from DB for client ${client.id}:`, clientData?.tags, typeof clientData?.tags);
       let clientTags = clientData && clientData.tags ? clientData.tags : [];
       
-      // Проверяем и парсим теги если они строка
+      // Проверяем и парсим теги
       if (typeof clientTags === 'string') {
         try {
           clientTags = JSON.parse(clientTags);
+          // Двойной парсинг если нужно
+          if (typeof clientTags === 'string') {
+            clientTags = JSON.parse(clientTags);
+          }
         } catch (e) {
+          console.error('Error parsing tags:', e);
           clientTags = [];
         }
       }
       
-      // Убеждаемся что это массив
+      // Убеждаемся что это массив и фильтруем
       if (!Array.isArray(clientTags)) {
         clientTags = [];
+      } else {
+        clientTags = clientTags.filter(tag => typeof tag === 'string' && tag.length > 1);
       }
       
       console.log(`Client ${client.id} current tags:`, clientTags);
