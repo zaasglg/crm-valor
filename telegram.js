@@ -316,6 +316,44 @@ class TelegramService {
       throw error;
     }
   }
+
+  async sendImageByPath(clientId, imagePath, fileName, operator = 'System') {
+    try {
+      const client = await Client.findByPk(clientId);
+      if (!client) throw new Error('Client not found');
+
+      console.log(`Attempting to send image: ${imagePath}`);
+      
+      // Проверяем существование файла
+      const fs = require('fs');
+      const path = require('path');
+      const fullPath = path.resolve(imagePath);
+      
+      if (!fs.existsSync(fullPath)) {
+        console.error(`Image file not found: ${fullPath}`);
+        throw new Error(`Image file not found: ${fullPath}`);
+      }
+      
+      console.log(`Sending image to Telegram: ${fullPath}`);
+      await this.bot.sendPhoto(client.external_id, fullPath);
+      console.log('Image sent successfully to Telegram');
+
+      const message = await Message.create({
+        client_id: clientId,
+        text: `Изображение: ${fileName}`,
+        file_url: imagePath,
+        file_name: fileName,
+        direction: 'out',
+        operator
+      });
+
+      return message;
+    } catch (error) {
+      console.error('Error sending image by path:', error);
+      console.error('Image path was:', imagePath);
+      throw error;
+    }
+  }
 }
 
 module.exports = TelegramService;
