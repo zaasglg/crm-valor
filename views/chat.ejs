@@ -723,15 +723,24 @@ fetch('/api/clients')
           // Парсим теги при загрузке
           try {
             if (client.tags) {
-              if (typeof client.tags === 'string') {
-                const parsed = JSON.parse(client.tags);
-                // Фильтруем только строки длиннее 1 символа
-                client.parsedTags = Array.isArray(parsed) ? parsed.filter(tag => typeof tag === 'string' && tag.length > 1) : [];
-              } else if (Array.isArray(client.tags)) {
-                client.parsedTags = client.tags.filter(tag => typeof tag === 'string' && tag.length > 1);
+              let parsed = client.tags;
+              
+              // Обрабатываем строку
+              if (typeof parsed === 'string') {
+                parsed = JSON.parse(parsed);
+                // Если результат снова строка, парсим ещё раз
+                if (typeof parsed === 'string') {
+                  parsed = JSON.parse(parsed);
+                }
+              }
+              
+              // Фильтруем только валидные теги
+              if (Array.isArray(parsed)) {
+                client.parsedTags = parsed.filter(tag => typeof tag === 'string' && tag.length > 1);
               } else {
                 client.parsedTags = [];
               }
+              
               console.log(`Client ${client.id} tags:`, client.parsedTags);
             } else {
               client.parsedTags = [];
