@@ -63,9 +63,9 @@
     "condition": { "tag_added": "Прошел регу Колумбия" },
     "action": {
       "auto_reply": [
-        { "text": "Me alegra saber que ya está listo para obtener la aplicación de demostración. Espero que aprecie sus funciones y compruebe su eficacia para predecir apuestas en el juego Chicken Road.", "delay": 0 },
-        { "text": "🤖Aquí tiene un enlace a la aplicación de demostración🤖\nССЫЛКА НА ХАК БОТА", "delay": 3000 },
-        { "text": "Después de probar la aplicación de demostración, escríbeme si todo salió bien! De acuerdo? 💸", "delay": 2000 }
+        { "text": "Me alegra saber que ya está listo para obtener la aplicación de demostración. Espero que aprecie sus funciones y compruebe su eficacia para predecir apuestas en el juego Chicken Road.", "delay": 4000 },
+        { "text": "🤖Aquí tiene un enlace a la aplicación de demostración🤖\nССЫЛКА НА ХАК БОТА", "delay": 4000 },
+        { "text": "Después de probar la aplicación de demostración, escríbeme si todo salió bien! De acuerdo? 💸", "delay": 4000 }
       ],
       "remove_tag": "Прошел регу Колумбия",
       "add_tag": "Прошел регу Колумбия"
@@ -78,9 +78,9 @@
     "condition": { "tag_added": "переход к полной версии" },
     "action": {
       "auto_reply": [
-        { "text": "Su aplicación se ha activado correctamente y está lista para usar. Puede acceder a ella a través del siguiente enlace: ССылка на хак бота.", "delay": 0 },
-        { "text": "Tenga en cuenta que el servicio de seguridad del casino puede rastrearlo a usted y a su aplicación. Por lo tanto, solo se permiten retiros tras alcanzar un saldo mínimo de 29.500.000 pesos.", "delay": 3000 },
-        { "text": "🔒Por qué se hace esto?\n\nEsto simula el crecimiento orgánico de la cuenta para no despertar sospechas en el sistema.", "delay": 2000 }
+        { "text": "Su aplicación se ha activado correctamente y está lista para usar. Puede acceder a ella a través del siguiente enlace: ССылка на хак бота.", "delay": 4000 },
+        { "text": "Tenga en cuenta que el servicio de seguridad del casino puede rastrearlo a usted y a su aplicación. Por lo tanto, solo se permiten retiros tras alcanzar un saldo mínimo de 29.500.000 pesos.", "delay": 4000 },
+        { "text": "🔒Por qué se hace esto?\n\nEsto simula el crecimiento orgánico de la cuenta para no despertar sospechas en el sistema.", "delay": 4000 }
       ],
       "remove_tag": "переход к полной версии",
       "add_tag": "полная версия"
