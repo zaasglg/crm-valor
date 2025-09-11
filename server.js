@@ -530,36 +530,46 @@ async function init() {
   try {
     await sequelize.authenticate();
     console.log('Database connected');
-    
+
+    // Загружаем правила автоматизации из файла при старте
+    try {
+      const rulesData = fs.readFileSync(path.join(__dirname, 'automation-rules.json'), 'utf8');
+      automationRules = JSON.parse(rulesData);
+      automationRules.forEach(rule => automationEngine.addRule(rule));
+      console.log(`Loaded ${automationRules.length} automation rules`);
+    } catch (err) {
+      console.warn('No automation-rules.json found or failed to load:', err.message);
+    }
+
     // Безопасная синхронизация с резервным копированием
     try {
       // Проверяем существование таблицы Clients
       const [tables] = await sequelize.query("SELECT name FROM sqlite_master WHERE type='table' AND name='Clients';");
-      
+
       if (tables.length > 0) {
         // Создаем резервную копию только если таблица существует и не пустая
         const [clientCount] = await sequelize.query('SELECT COUNT(*) as count FROM `Clients`;');
-        
+
         if (clientCount[0].count > 0) {
           // Удаляем старую резервную копию
           await sequelize.query('DROP TABLE IF EXISTS `Clients_backup`;');
-          
+
           // Создаем новую резервную копию
           await sequelize.query(`
             CREATE TABLE \`Clients_backup\` AS 
             SELECT * FROM \`Clients\` WHERE \`id\` IS NOT NULL;
           `);
-          
+
           console.log(`Backup created with ${clientCount[0].count} records`);
         }
       }
     } catch (backupError) {
       console.warn('Backup creation failed:', backupError.message);
     }
-    
+
     await sequelize.sync({ force: false });
     console.log('Database synced');
-    
+
     // Создаем админа по умолчанию
     const adminExists = await User.findOne({ where: { role: 'admin' } });
     if (!adminExists) {
@@ -570,7 +580,7 @@ async function init() {
       });
       console.log('Default admin created: admin/admin123');
     }
-    
+
     if (process.env.TELEGRAM_BOT_TOKEN) {
       telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN, io, automationEngine);
       automationEngine.setTelegramService(telegramService);
@@ -579,7 +589,7 @@ async function init() {
     } else {
       console.warn('TELEGRAM_BOT_TOKEN not provided');
     }
-    
+
     const PORT = process.env.PORT || 3001;
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
