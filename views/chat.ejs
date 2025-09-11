@@ -402,6 +402,99 @@ function updateClientTagsInList(clientId) {
     .catch(err => console.error('Error updating client tags:', err));
 }
 
+// Функции для работы с тегами
+window.addSelectedTag = function() {
+  const selector = document.getElementById('tag-selector');
+  const selectedValue = selector.value;
+  
+  if (!selectedValue) {
+    alert('Выберите тег');
+    return;
+  }
+  
+  if (selectedValue === 'custom') {
+    document.getElementById('custom-tag-input').style.display = 'block';
+    selector.value = '';
+    return;
+  }
+  
+  if (!currentClientId) {
+    alert('Клиент не выбран');
+    return;
+  }
+  
+  fetch('/api/add-tag', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: currentClientId, tag: selectedValue })
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (result.success) {
+      selector.value = '';
+      updateAutomationTagsInSidebar(currentClientId);
+    } else {
+      alert('Ошибка при добавлении тега');
+    }
+  })
+  .catch(err => {
+    console.error('Error adding tag:', err);
+    alert('Ошибка при добавлении тега');
+  });
+};
+
+window.addManualTag = function() {
+  const input = document.getElementById('new-tag-input');
+  const tagText = input.value.trim();
+  
+  if (!tagText) {
+    alert('Введите тег');
+    return;
+  }
+  
+  if (!currentClientId) {
+    alert('Клиент не выбран');
+    return;
+  }
+  
+  fetch('/api/add-tag', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: currentClientId, tag: tagText })
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (result.success) {
+      input.value = '';
+      document.getElementById('custom-tag-input').style.display = 'none';
+      updateAutomationTagsInSidebar(currentClientId);
+    } else {
+      alert('Ошибка при добавлении тега');
+    }
+  })
+  .catch(err => {
+    console.error('Error adding tag:', err);
+    alert('Ошибка при добавлении тега');
+  });
+};
+
+window.removeManualTag = function(tag) {
+  if (!currentClientId) return;
+  
+  fetch('/api/remove-tag', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: currentClientId, tag: tag })
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (result.success) {
+      updateAutomationTagsInSidebar(currentClientId);
+    }
+  })
+  .catch(err => console.error('Error removing tag:', err));
+};
+
 
 
 function selectClient(clientId) {
