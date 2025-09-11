@@ -26,8 +26,7 @@
       ],
       "remove_tag": "1смс",
       "add_tag": "2смс"
-    },
-    "stop_funnel_until_reply": true
+    }
   },
   {
     "id": "step3_registration",
@@ -43,7 +42,6 @@
       ],
       "remove_tag": "2смс",
       "add_tag": "регистрация"
-    },
-    "stop_funnel_until_reply": true
+    }
   }
 ]
