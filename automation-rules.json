@@ -17,7 +17,10 @@
     "id": "step2_reply",
     "name": "Ответ → 2смс",
     "event": "message_received",
-    "condition": { "has_tag": "1смс" },
+    "condition": { 
+      "has_tag": "1смс",
+      "text_not_contains": "/start"
+    },
     "action": {
       "auto_reply": [
         { "text": "He desarrollado un método único que te ayudará a ganar dinero con mi app! 💰 Hoy puedes obtener una ganancia de 29,254,482 pesos.", "delay": 0 },
@@ -33,7 +36,10 @@
     "id": "step3_registration",
     "name": "Ответ → регистрация",
     "event": "message_received",
-    "condition": { "has_tag": "2смс" },
+    "condition": { 
+      "has_tag": "2смс",
+      "text_not_contains": "/start"
+    },
     "action": {
       "auto_reply": [
         { "text": "Para empezar, necesitas registrarte en ValorBet.", "delay": 0 },
