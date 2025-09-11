@@ -7,7 +7,7 @@
     "action": {
       "auto_reply": [
         { "text": "Hola! Me llamo César Gómez y me complace presentarte una oportunidad única что podría cambiar tu vida. Te has preguntado alguna vez как algunos jugadores ganan constantemente в Chicken Road? No es suerte, sino el resultado de usar tecnología avanzada! Mi приложение utiliza алгоритмы complejos для analizar datos и предсказать los resultados de las apuestas.", "delay": 0 },
-        { "text": "Quieres saber cómo funciona mi aplicación?", "delay": 2000 }
+        { "text": "Quieres saber cómo funciona mi aplicación?", "delay": 5000 }
       ],
       "add_tag": "1смс"
     }
