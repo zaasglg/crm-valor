@@ -10,23 +10,21 @@
         { "text": "Quieres saber cómo funciona mi aplicación?", "delay": 2000 }
       ],
       "add_tag": "1смс"
-    }
+    },
+    "stop_funnel_until_reply": true
   },
   {
     "id": "step2_reply",
     "name": "Ответ → 2смс",
     "event": "message_received",
-    "condition": { 
-      "text_not_contains": "/start",
-      "text_length_min": 1,
-      "previous_bot_message_contains": "Quieres saber cómo funciona mi aplicación?"
-    },
+    "condition": { "has_tag": "1смс" },
     "action": {
       "auto_reply": [
         { "text": "He desarrollado un método único que te ayudará a ganar dinero con mi app! 💰 Hoy puedes obtener una ganancia de 29,254,482 pesos.", "delay": 0 },
         { "text": "Además, después de registrarte, te proporcionaré una demo для que puedas comprobar su eficacia. No pierdas la oportunidad de cambiar tu vida para mejor!", "delay": 2000 },
         { "text": "Listo para empezar?", "delay": 2000 }
       ],
+      "remove_tag": "1смс",
       "add_tag": "2смс"
     },
     "stop_funnel_until_reply": true
@@ -35,11 +33,7 @@
     "id": "step3_registration",
     "name": "Ответ → регистрация",
     "event": "message_received",
-    "condition": { 
-      "text_not_contains": "/start",
-      "text_length_min": 1,
-      "previous_bot_message_contains": "Listo para empezar?"
-    },
+    "condition": { "has_tag": "2смс" },
     "action": {
       "auto_reply": [
         { "text": "Para empezar, necesitas registrarte en ValorBet.", "delay": 0 },
@@ -47,6 +41,7 @@
         { "text": "Necesito asegurarme de que te hayas registrado correctamente. Para ello, necesito ver tu identificación en la página web del казино ValorBet. Por favor, envíame una captura de pantalla с tu número de cuenta.", "delay": 2000 },
         { "text": "После того как пришлешь скрин, дам приложение для теста.", "delay": 2000 }
       ],
+      "remove_tag": "2смс",
       "add_tag": "регистрация"
     },
     "stop_funnel_until_reply": true

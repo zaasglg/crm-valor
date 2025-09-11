@@ -13,7 +13,7 @@ function loadFunnelSchema(schemaPath) {
     // Отправляем каждое правило в API
     rules.forEach(async (rule, index) => {
       try {
-        const response = await fetch('http://localhost:3000/api/automation-rules', {
+        const response = await fetch('/api/automation-rules', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

@@ -43,6 +43,11 @@ const Client = sequelize.define('Client', {
   cluster: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  tags: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: []
   }
 });
 

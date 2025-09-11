@@ -114,12 +114,36 @@ class AutomationEngine {
     }
   }
 
-  addTags(clientId, tags) {
+  async addTags(clientId, tags) {
     console.log(`Adding tags ${tags.join(', ')} to client ${clientId}`);
+    try {
+      const { Client } = require('./models');
+      const client = await Client.findByPk(clientId);
+      if (client) {
+        const currentTags = client.tags || [];
+        const newTags = [...new Set([...currentTags, ...tags])];
+        await client.update({ tags: newTags });
+        console.log(`Tags updated for client ${clientId}:`, newTags);
+      }
+    } catch (error) {
+      console.error('Error adding tags:', error);
+    }
   }
 
-  removeTags(clientId, tags) {
+  async removeTags(clientId, tags) {
     console.log(`Removing tags ${tags.join(', ')} from client ${clientId}`);
+    try {
+      const { Client } = require('./models');
+      const client = await Client.findByPk(clientId);
+      if (client) {
+        const currentTags = client.tags || [];
+        const newTags = currentTags.filter(tag => !tags.includes(tag));
+        await client.update({ tags: newTags });
+        console.log(`Tags updated for client ${clientId}:`, newTags);
+      }
+    } catch (error) {
+      console.error('Error removing tags:', error);
+    }
   }
 
   async sendAutoReply(clientId, messages) {
