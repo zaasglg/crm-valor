@@ -132,16 +132,7 @@ class AutomationEngine {
       switch (key) {
         case 'add_tag':
           const tagsToAdd = Array.isArray(value) ? value : [value];
-          await this.addTags(data.clientId, tagsToAdd);
-          // Запускаем проверку правил на событие tag_added
-          for (const tag of tagsToAdd) {
-            await this.processEvent('tag_added', {
-              clientId: data.clientId,
-              tag_added: tag,
-              tags: data.tags,
-              client: data.client
-            });
-          }
+          await this.addTags(data.clientId, tagsToAdd, false); // false = не запускать автоматизацию
           break;
 
         case 'remove_tag':
@@ -176,7 +167,7 @@ class AutomationEngine {
     }
   }
 
-  async addTags(clientId, tags) {
+  async addTags(clientId, tags, triggerAutomation = true) {
     console.log(`Adding tags ${tags.join(', ')} to client ${clientId}`);
     try {
       const { Client } = require('./models');
@@ -199,6 +190,18 @@ class AutomationEngine {
         console.log(`Before update - current: [${currentTags.join(', ')}], adding: [${tags.join(', ')}], result: [${newTags.join(', ')}]`);
         await client.update({ tags: JSON.stringify(newTags) });
         console.log(`Tags updated for client ${clientId}:`, newTags);
+        
+        // Запускаем автоматизацию только если разрешено
+        if (triggerAutomation) {
+          for (const tag of tags) {
+            await this.processEvent('tag_added', {
+              clientId: clientId,
+              tag_added: tag,
+              tags: newTags,
+              client: client
+            });
+          }
+        }
         
         // Сохраняем системное сообщение в базу данных
         if (this.telegramService) {
