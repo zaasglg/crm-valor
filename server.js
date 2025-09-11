@@ -537,6 +537,16 @@ app.post('/api/add-tag', async (req, res) => {
     if (!tags.includes(tag)) {
       tags.push(tag);
       await client.update({ tags: JSON.stringify(tags) });
+      
+      // Запускаем автоматизацию при добавлении тега вручную
+      if (automationEngine) {
+        await automationEngine.processEvent('tag_added', {
+          clientId: client_id,
+          tag_added: tag,
+          tags: tags,
+          client: client
+        });
+      }
     }
     
     res.json({ success: true });
