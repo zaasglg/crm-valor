@@ -18,7 +18,8 @@
     "name": "Ответ → 2смс",
     "event": "message_received",
     "condition": { 
-      "has_tag": "1смс"
+      "text_not_contains": "/start",
+      "previous_bot_message_contains": "Quieres saber cómo funciona mi aplicación?"
     },
     "action": {
       "auto_reply": [
@@ -26,7 +27,6 @@
         { "text": "Además, después de registrarte, te proporcionaré una demo для que puedas comprobar su eficacia. No pierdas la oportunidad de cambiar tu vida para mejor!", "delay": 2000 },
         { "text": "Listo para empezar?", "delay": 2000 }
       ],
-      "remove_tag": "1смс",
       "add_tag": "2смс"
     },
     "stop_funnel_until_reply": true
@@ -36,7 +36,8 @@
     "name": "Ответ → регистрация",
     "event": "message_received",
     "condition": { 
-      "has_tag": "2смс"
+      "text_not_contains": "/start",
+      "previous_bot_message_contains": "Listo para empezar?"
     },
     "action": {
       "auto_reply": [
@@ -45,7 +46,6 @@
         { "text": "Necesito asegurarme de que te hayas registrado correctamente. Para ello, necesito ver tu identificación en la página web del казино ValorBet. Por favor, envíame una captura de pantalla с tu número de cuenta.", "delay": 2000 },
         { "text": "После того как пришлешь скрин, дам приложение для теста.", "delay": 2000 }
       ],
-      "remove_tag": "2смс",
       "add_tag": "регистрация"
     },
     "stop_funnel_until_reply": true
