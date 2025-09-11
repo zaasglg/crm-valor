@@ -6,7 +6,7 @@
     "condition": { "text_contains": "/start" },
     "action": {
       "auto_reply": [
-        { "text": "Hola! Me llamo César Gómez y me complace presentarte una oportunidad única que podría cambiar tu vida. Te has preguntado alguna vez cómo algunos jugadores ganan constantemente en Chicken Road? No es suerte, sino el resultado de usar tecnología avanzada! Mi aplicación utiliza algoritmos complejos para analizar datos y predecir los resultados de las apuestas.", "delay": 0 },
+        { "text": "Hola! Me llamo César Gómez y me complace presentarte una oportunidad única que podría cambiar tu vida. Te has preguntado alguna vez cómo algunos jugadores ganan constantemente en Chicken Road? No es suerte, sino el resultado de usar tecnología avanzada! Mi aplicación utiliza algoritmos complejos para analizar datos y predecir los resultados de las apuestas.", "delay": 4000 },
         { "text": "Quieres saber cómo funciona mi aplicación?", "delay": 4000 }
       ],
       "add_tag": "1смс"
@@ -22,9 +22,9 @@
     },
     "action": {
       "auto_reply": [
-        { "text": "He desarrollado un método único que te ayudará a ganar dinero con mi app! 💰 Hoy puedes obtener una ganancia de 29,254,482 pesos.", "delay": 0 },
+        { "text": "He desarrollado un método único que te ayudará a ganar dinero con mi app! 💰 Hoy puedes obtener una ganancia de 29,254,482 pesos.", "delay": 4000 },
         { "text": "Además, después de registrarte, te proporcionaré una demo для que puedas comprobar su eficacia. No pierdas la oportunidad de cambiar tu vida para mejor!", "delay": 4000 },
-        { "text": "Listo para empezar?", "delay": 2000 }
+        { "text": "Listo para empezar?", "delay": 3000 }
       ],
       "remove_tag": "1смс",
       "add_tag": "2смс"
@@ -40,13 +40,14 @@
     },
     "action": {
       "auto_reply": [
-        { "text": "Para empezar, necesitas registrarte en ValorBet.", "delay": 0 },
+        { "text": "Para empezar, necesitas registrarte en ValorBet.", "delay": 4000 },
         { "text": "Aquí tienes el enlace de registro: 👉🏻 https://valor-games.com 👈🏻. Haz clic en él y regístrate con tu correo electrónico.", "delay": 4000 },
         { "text": "Necesito asegurarme de que te hayas registrado correctamente. Para ello, necesito ver tu identificación en la página web del casino ValorBet. Por favor, envíame una captura de pantalla con tu número de cuenta.", "delay": 4000 }
       ],
       "send_file": {
         "path": "./uploads/first_photo.JPG",
-        "name": "first_photo.JPG"
+        "name": "first_photo.JPG",
+        "type": "image"
       },
       "remove_tag": "2смс",
       "add_tag": "регистрация"
