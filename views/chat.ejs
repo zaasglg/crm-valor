@@ -508,12 +508,7 @@ function openClientSidebar(clientId) {
           window.setClientClusters(clusters);
           
           // Загружаем теги автоматизации
-          let automationTags = [];
-          try {
-            automationTags = client.tags ? (Array.isArray(client.tags) ? client.tags : JSON.parse(client.tags)) : [];
-          } catch (e) {
-            automationTags = [];
-          }
+          const automationTags = client.parsedTags || [];
           
           const automationTagsContainer = document.getElementById('automation-tags');
           if (automationTags.length === 0) {
@@ -724,6 +719,26 @@ fetch('/api/clients')
             console.error('Error parsing clusters for client', client.id, e);
             client.parsedClusters = [];
           }
+          
+          // Парсим теги при загрузке
+          try {
+            if (client.tags) {
+              if (typeof client.tags === 'string') {
+                client.parsedTags = JSON.parse(client.tags);
+              } else if (Array.isArray(client.tags)) {
+                client.parsedTags = client.tags;
+              } else {
+                client.parsedTags = [];
+              }
+              console.log(`Client ${client.id} tags:`, client.parsedTags);
+            } else {
+              client.parsedTags = [];
+            }
+          } catch (e) {
+            console.error('Error parsing tags for client', client.id, e);
+            client.parsedTags = [];
+          }
+          
           clients[client.id] = client;
         }
       });
