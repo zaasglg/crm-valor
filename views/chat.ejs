@@ -222,6 +222,8 @@ let currentClientId = null;
 let clients = {};
 let allClients = {};
 let unreadCounts = {};
+let currentFilter = 'all';
+let currentStatus = null;
 
 // Socket events
 socket.on('new_message', (data) => {
@@ -462,6 +464,9 @@ function renderClients() {
       </div>
     `;
   }).join('');
+  
+  // Применяем фильтры после рендеринга
+  setTimeout(() => applyFilters(), 100);
 }
 
 function updateClientPreview(clientId, message) {
@@ -625,12 +630,79 @@ function saveClientData() {
 
 // Поиск клиентов
 document.getElementById('search-clients').addEventListener('input', (e) => {
-  const search = e.target.value.toLowerCase();
-  document.querySelectorAll('.client-item').forEach(item => {
-    const name = item.querySelector('.client-info h6').textContent.toLowerCase();
-    item.style.display = name.includes(search) ? 'block' : 'none';
+  applyFilters();
+});
+
+// Фильтры чатов
+document.querySelectorAll('[data-filter]').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    currentFilter = e.target.dataset.filter;
+    applyFilters();
   });
 });
+
+// Фильтры статусов
+document.querySelectorAll('[data-status]').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    if (e.target.classList.contains('active')) {
+      e.target.classList.remove('active');
+      currentStatus = null;
+    } else {
+      document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentStatus = e.target.dataset.status;
+    }
+    applyFilters();
+  });
+});
+
+function applyFilters() {
+  const search = document.getElementById('search-clients').value.toLowerCase();
+  
+  document.querySelectorAll('.client-item').forEach(item => {
+    const clientId = item.dataset.clientId;
+    const client = clients[clientId];
+    const name = item.querySelector('.client-info h6').textContent.toLowerCase();
+    
+    let show = true;
+    
+    // Поиск
+    if (search && !name.includes(search)) {
+      show = false;
+    }
+    
+    // Фильтр по типу
+    if (show && currentFilter !== 'all') {
+      if (currentFilter === 'new' && client?.assigned_to) {
+        show = false;
+      }
+      if (currentFilter === 'my' && client?.assigned_to !== user.username) {
+        show = false;
+      }
+    }
+    
+    // Фильтр по статусу
+    if (show && currentStatus) {
+      const unreadCount = unreadCounts[clientId] || 0;
+      const lastMessage = client?.messages?.[client.messages.length - 1];
+      const isOverdue = lastMessage && (Date.now() - new Date(lastMessage.created_at).getTime()) > 24 * 60 * 60 * 1000;
+      
+      if (currentStatus === 'unread' && unreadCount === 0) {
+        show = false;
+      }
+      if (currentStatus === 'overdue' && !isOverdue) {
+        show = false;
+      }
+      if (currentStatus === 'open' && (!client?.assigned_to || unreadCount > 0)) {
+        show = false;
+      }
+    }
+    
+    item.style.display = show ? 'block' : 'none';
+  });
+}
 
 function getClientClustersHTML(client) {
   const clusters = client.parsedClusters || [];
