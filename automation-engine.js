@@ -33,8 +33,11 @@ class AutomationEngine {
 
   checkCondition(condition, data) {
     if (!condition) return true;
+    
+    console.log('Checking condition:', condition, 'with data tags:', data.tags);
 
     for (const [key, value] of Object.entries(condition)) {
+      console.log(`Checking condition key: ${key}, value: ${value}`);
       switch (key) {
         case 'text_contains':
           const text = (data.message?.text || '').toLowerCase();
@@ -45,11 +48,37 @@ class AutomationEngine {
           break;
 
         case 'has_tag':
-          const tags = data.tags || [];
+          let tags = data.tags || [];
+          
+          // Парсим теги если они строка
+          if (typeof tags === 'string') {
+            try {
+              tags = JSON.parse(tags);
+              // Двойной парсинг если нужно
+              if (typeof tags === 'string') {
+                tags = JSON.parse(tags);
+              }
+            } catch (e) {
+              tags = [];
+            }
+          }
+          
+          // Убеждаемся что это массив
+          if (!Array.isArray(tags)) {
+            tags = [];
+          }
+          
+          // Фильтруем только валидные теги
+          tags = tags.filter(tag => typeof tag === 'string' && tag.length > 1);
+          
           const requiredTags = Array.isArray(value) ? value : [value];
+          console.log(`Checking tags: client has [${tags.join(', ')}], required [${requiredTags.join(', ')}]`);
+          
           if (!requiredTags.some(tag => tags.includes(tag))) {
+            console.log('Tag condition not met');
             return false;
           }
+          console.log('Tag condition met');
           break;
 
         case 'from_channel':
