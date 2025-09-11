@@ -157,13 +157,22 @@ class TelegramService {
       console.log('Emitting to clients:', JSON.stringify(emitData, null, 2));
       this.io.emit('new_message', emitData);
       
-      // Запускаем автоматизацию
+      // Получаем актуальные теги клиента (пример: client.tags или из базы)
+      let clientTags = [];
+      if (client.tags) {
+        clientTags = Array.isArray(client.tags) ? client.tags : [client.tags];
+      } else if (typeof getClientTags === 'function') {
+        clientTags = await getClientTags(client.id);
+      }
+
+      // Запускаем автоматизацию с тегами
       if (this.automationEngine) {
         console.log('Processing automation rules...');
         this.automationEngine.processEvent('message_received', {
           clientId: client.id,
           message: message,
           channel: 'telegram',
+          tags: clientTags,
           client: client
         });
       }
